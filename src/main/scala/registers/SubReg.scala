@@ -1,4 +1,4 @@
-package shaheen.registers
+package registers
 import chisel3._
 
 
@@ -40,4 +40,5 @@ class SubReg(DW: Int = 32, SWACCESS: String = "RW")(RESVAL: UInt = 0.U(DW.W)) ex
 
   io.qs := q_reg
   io.q := q_reg
+  io.qe := qe_reg
 }

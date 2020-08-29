@@ -1,5 +1,6 @@
 package registers
 import chisel3._
+import chisel3.util.Fill
 
 
 class SubReg(DW: Int = 32, SWACCESS: String = "RW")(RESVAL: UInt = 0.U(DW.W)) extends Module {
@@ -28,6 +29,15 @@ class SubReg(DW: Int = 32, SWACCESS: String = "RW")(RESVAL: UInt = 0.U(DW.W)) ex
   } else if(SWACCESS == "RO") {
     wr_en := io.de
     wr_data := io.d
+  } else if(SWACCESS == "W1C") {
+    wr_en := io.we || io.de
+    wr_data := Mux(io.de, io.d, q_reg) & Mux(io.we, ~io.wd, Fill(DW, 1.U))
+  } else if(SWACCESS == "W0C") {
+    wr_en := io.we || io.de
+    wr_data := Mux(io.de, io.d, q_reg) & Mux(io.we, io.wd, Fill(DW, 1.U))
+  } else if(SWACCESS == "W1S") {
+    wr_en := io.we || io.de
+    wr_data := Mux(io.de, io.d, q_reg) | Mux(io.we, io.wd, Fill(DW, 0.U))
   } else {
     wr_en := io.de
     wr_data := io.d

@@ -1,6 +1,6 @@
 package gpio
 import chisel3._
-import chisel3.util.Fill
+import chisel3.util.{Cat, Fill}
 import registers.{SubReg, SubRegExt}
 import tilelink.{TLConfiguration, TL_D2H, TL_H2D, TL_RegAdapter}
 
@@ -265,5 +265,131 @@ class GpioRegTop(implicit val conf: TLConfiguration) extends Module {
   intr_ctrl_en_lvllow_reg.io.d := 0.U(DW.W)
   io.reg2hw.intr_ctrl_en_lvlLow.q := intr_ctrl_en_lvllow_reg.io.q
   intr_ctrl_en_lvllow_qs := intr_ctrl_en_lvllow_reg.io.qs
+
+  val addr_hit = Wire(UInt(14.W))
+  addr_hit := 0.U
+  addr_hit(0)  := reg_addr === GpioAddressMap.GPIO_INTR_STATE_OFFSET
+  addr_hit(1)  := reg_addr === GpioAddressMap.GPIO_INTR_ENABLE_OFFSET
+  addr_hit(2)  := reg_addr === GpioAddressMap.GPIO_INTR_TEST_OFFSET
+  addr_hit(3)  := reg_addr === GpioAddressMap.GPIO_DATA_IN_OFFSET
+  addr_hit(4)  := reg_addr === GpioAddressMap.GPIO_DIRECT_OUT_OFFSET
+  addr_hit(5)  := reg_addr === GpioAddressMap.GPIO_MASKED_OUT_LOWER_OFFSET
+  addr_hit(6)  := reg_addr === GpioAddressMap.GPIO_MASKED_OUT_UPPER_OFFSET
+  addr_hit(7)  := reg_addr === GpioAddressMap.GPIO_DIRECT_OE_OFFSET
+  addr_hit(8)  := reg_addr === GpioAddressMap.GPIO_MASKED_OE_LOWER_OFFSET
+  addr_hit(9)  := reg_addr === GpioAddressMap.GPIO_MASKED_OE_UPPER_OFFSET
+  addr_hit(10) := reg_addr === GpioAddressMap.GPIO_INTR_CTRL_EN_RISING_OFFSET
+  addr_hit(11) := reg_addr === GpioAddressMap.GPIO_INTR_CTRL_EN_FALLING_OFFSET
+  addr_hit(12) := reg_addr === GpioAddressMap.GPIO_INTR_CTRL_EN_LVLHIGH_OFFSET
+  addr_hit(13) := reg_addr === GpioAddressMap.GPIO_INTR_CTRL_EN_LVLLOW_OFFSET
+
+  addr_miss := Mux(reg_re || reg_we, ~addr_hit.orR, false.B)
+
+  wr_err := false.B
+  val GPIO_PERMIT = Wire(Vec(14, UInt((DW/8).W)))
+  // For gpio all registers support only word writes
+  for(i <- 0 until 14) {
+    GPIO_PERMIT(i) := "b1111".U
+  }
+
+  for(i <- 0 until 14) {
+    wr_err := Mux(addr_hit(i) && reg_we && (GPIO_PERMIT(i) =/= (GPIO_PERMIT(i) & reg_be)), true.B, false.B)
+  }
+
+  /** Initialising software wires received from the TL-UL Host by TL_RegAdapter */
+
+  /** ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| */
+
+  intr_state_we := addr_hit(0) & reg_we & !wr_err
+  intr_state_wd := reg_wdata
+
+  intr_enable_we := addr_hit(1) & reg_we & !wr_err
+  intr_enable_wd := reg_wdata
+
+  intr_test_we := addr_hit(2) & reg_we & !wr_err
+  intr_test_wd := reg_wdata
+
+  direct_out_we := addr_hit(4) & reg_we & !wr_err
+  direct_out_wd := reg_wdata
+  direct_out_re := addr_hit(4) & reg_re
+
+  masked_out_lower_data_we := addr_hit(5) & reg_we & !wr_err
+  masked_out_lower_data_wd := reg_wdata((DW/2)-1,0) // [15:0]
+  masked_out_lower_data_re := addr_hit(5) & reg_re
+
+  masked_out_lower_mask_we := addr_hit(5) & reg_we & !wr_err
+  masked_out_lower_mask_wd := reg_wdata(DW-1, DW/2) // [31:16]
+
+  masked_out_upper_data_we := addr_hit(6) & reg_we & !wr_err
+  masked_out_upper_data_wd := reg_wdata((DW/2)-1,0) // [15:0]
+  masked_out_upper_data_re := addr_hit(6) & reg_re
+
+  masked_out_upper_mask_we := addr_hit(6) & reg_we & !wr_err
+  masked_out_upper_mask_wd := reg_wdata(DW-1, DW/2) // [31:16]
+
+  direct_oe_we := addr_hit(7) & reg_we & !wr_err
+  direct_oe_wd := reg_wdata
+  direct_oe_re := addr_hit(7) & reg_re
+
+  masked_oe_lower_data_we := addr_hit(8) & reg_we & !wr_err
+  masked_oe_lower_data_wd := reg_wdata((DW/2)-1,0) // [15:0]
+  masked_oe_lower_data_re := addr_hit(8) & reg_re
+
+  masked_oe_lower_mask_we := addr_hit(8) & reg_we & !wr_err
+  masked_oe_lower_mask_wd := reg_wdata(DW-1, DW/2) // [31:16]
+  masked_oe_lower_mask_re := addr_hit(8) & reg_re
+
+  masked_oe_upper_data_we := addr_hit(9) & reg_we & !wr_err
+  masked_oe_upper_data_wd := reg_wdata((DW/2)-1,0) // [15:0]
+  masked_oe_upper_data_re := addr_hit(9) & reg_re
+
+  masked_oe_upper_mask_we := addr_hit(9) & reg_we & !wr_err
+  masked_oe_upper_mask_wd := reg_wdata(DW-1, DW/2) // [31:16]
+  masked_oe_upper_mask_re := addr_hit(9) & reg_re
+
+  intr_ctrl_en_rising_we := addr_hit(10) & reg_we & !wr_err
+  intr_ctrl_en_rising_wd := reg_wdata
+
+  intr_ctrl_en_falling_we := addr_hit(11) & reg_we & !wr_err
+  intr_ctrl_en_falling_wd := reg_wdata
+
+  intr_ctrl_en_lvlhigh_we := addr_hit(12) & reg_we & !wr_err
+  intr_ctrl_en_lvlhigh_wd := reg_wdata
+
+  intr_ctrl_en_lvllow_we := addr_hit(13) & reg_we & !wr_err
+  intr_ctrl_en_lvllow_wd := reg_wdata
+
+  reg_rdata_next := 0.U
+  when(addr_hit(0)) {
+    reg_rdata_next := intr_state_qs
+  }.elsewhen(addr_hit(1)) {
+    reg_rdata_next := intr_enable_qs
+  }.elsewhen(addr_hit(2)) {
+    reg_rdata_next := 0.U // intr_test condition, software does not want to read anything
+  }.elsewhen(addr_hit(3)) {
+    reg_rdata_next := data_in_qs
+  }.elsewhen(addr_hit(4)) {
+    reg_rdata_next := direct_out_qs
+  }.elsewhen(addr_hit(5)) {
+    reg_rdata_next := Cat(0.U((DW/2).W), masked_out_lower_data_qs)
+  }.elsewhen(addr_hit(6)) {
+    reg_rdata_next := Cat(0.U((DW/2).W), masked_out_upper_data_qs)
+  }.elsewhen(addr_hit(7)) {
+    reg_rdata_next := direct_oe_qs
+  }.elsewhen(addr_hit(8)) {
+    reg_rdata_next := Cat(masked_oe_lower_mask_qs, masked_oe_lower_data_qs)
+  }.elsewhen(addr_hit(9)) {
+    reg_rdata_next := Cat(masked_oe_upper_mask_qs, masked_oe_upper_data_qs)
+  }.elsewhen(addr_hit(10)) {
+    reg_rdata_next := intr_ctrl_en_rising_qs
+  }.elsewhen(addr_hit(11)) {
+    reg_rdata_next := intr_ctrl_en_falling_qs
+  }.elsewhen(addr_hit(12)) {
+    reg_rdata_next := intr_ctrl_en_lvlhigh_qs
+  }.elsewhen(addr_hit(13)) {
+    reg_rdata_next := intr_ctrl_en_lvllow_qs
+  }.otherwise {
+    reg_rdata_next := Fill(DW, 1.U) // all 32 bit '11111s on error
+  }
 
 }

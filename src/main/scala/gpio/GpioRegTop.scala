@@ -184,7 +184,7 @@ class GpioRegTop(implicit val conf: TLConfiguration) extends Module {
   direct_oe_reg.io.d := io.hw2reg.direct_oe.d
   io.reg2hw.direct_oe.qe := direct_oe_reg.io.qe
   io.reg2hw.direct_oe.q := direct_oe_reg.io.q
-  direct_out_qs := direct_oe_reg.io.qs
+  direct_oe_qs := direct_oe_reg.io.qs
 
   // Creating EXT MASKED_OE_LOWER_DATA register
   // receives data in [15:0] bits and writes the DATA_OE register in [15:0] bits
@@ -266,8 +266,8 @@ class GpioRegTop(implicit val conf: TLConfiguration) extends Module {
   io.reg2hw.intr_ctrl_en_lvlLow.q := intr_ctrl_en_lvllow_reg.io.q
   intr_ctrl_en_lvllow_qs := intr_ctrl_en_lvllow_reg.io.qs
 
-  val addr_hit = Wire(UInt(14.W))
-  addr_hit := 0.U
+  val addr_hit = Wire(Vec(14, Bool()))
+  addr_hit.foreach(w => w := false.B)
   addr_hit(0)  := reg_addr === GpioAddressMap.GPIO_INTR_STATE_OFFSET
   addr_hit(1)  := reg_addr === GpioAddressMap.GPIO_INTR_ENABLE_OFFSET
   addr_hit(2)  := reg_addr === GpioAddressMap.GPIO_INTR_TEST_OFFSET
@@ -283,7 +283,7 @@ class GpioRegTop(implicit val conf: TLConfiguration) extends Module {
   addr_hit(12) := reg_addr === GpioAddressMap.GPIO_INTR_CTRL_EN_LVLHIGH_OFFSET
   addr_hit(13) := reg_addr === GpioAddressMap.GPIO_INTR_CTRL_EN_LVLLOW_OFFSET
 
-  addr_miss := Mux(reg_re || reg_we, ~addr_hit.orR, false.B)
+  addr_miss := Mux(reg_re || reg_we, ~addr_hit.contains(true.B), false.B)
 
   wr_err := false.B
   val GPIO_PERMIT = Wire(Vec(14, UInt((DW/8).W)))

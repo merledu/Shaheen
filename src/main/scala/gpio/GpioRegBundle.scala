@@ -4,7 +4,8 @@ import chisel3._
  * This file contains all the bundles that will be required by the peripheral
  */
 
-class GPIOReg2Hw(DW: Int = 32) extends Bundle {
+// using val in the parameter DW to avoid cloneType error
+class GPIOReg2Hw(val DW: Int = 32) extends Bundle {
   val intr_state = new Bundle {
     val q = Output(UInt(DW.W))
   }
@@ -90,7 +91,8 @@ class GPIOReg2Hw(DW: Int = 32) extends Bundle {
 
 }
 
-class GPIOHw2Reg(DW: Int = 32) extends Bundle {
+// using val in the parameter DW to avoid cloneType error
+class GPIOHw2Reg(val DW: Int = 32) extends Bundle {
   val intr_state = new Bundle {
     val d = Input(UInt(DW.W))
     val de = Input(Bool())

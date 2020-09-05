@@ -8,7 +8,7 @@ class GpioTest extends FlatSpec with ChiselScalatestTester with Matchers {
   implicit val conf = TLConfiguration()
   behavior of "Gpio"
   it should "just connect properly and pass test" in {
-    test(new GpioRegTop) {c =>
+    test(new Gpio) {c =>
       c.clock.step(10)
     }
   }

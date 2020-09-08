@@ -279,4 +279,54 @@ class GpioTest extends FlatSpec with ChiselScalatestTester with Matchers {
       c.io.intr_gpio_o.expect("h0000000f".U)
     }
   }
+  it should "generate interrupt for pins 0 and 1 through INTR_TEST register" in {
+    test(new Gpio) { c =>
+      // Enabling interrupts for 0 and 1 pins
+      c.io.tl_i.a_opcode.poke(TL_A_Opcode.putFullData)
+      c.io.tl_i.a_valid.poke(true.B)
+      c.io.tl_i.d_ready.poke(true.B)
+      c.io.tl_i.a_param.poke(0.U)
+      c.io.tl_i.a_size.poke(2.U)
+      c.io.tl_i.a_source.poke(0.U)
+      c.io.tl_i.a_address.poke(GpioAddressMap.GPIO_INTR_ENABLE_OFFSET)
+      c.io.tl_i.a_mask.poke("b1111".U)
+      c.io.tl_i.a_data.poke("h00000003".U)
+      c.clock.step(1)
+      c.io.tl_o.d_opcode.expect(TL_D_Opcode.accessAck)
+
+      // giving another clock cycle so that device is now ready to accept new request
+      // as outstanding will get 0 now
+      c.clock.step(1)
+      // Writing interrupts for pins 0 and 1 through INTR_TEST
+      c.io.tl_i.a_opcode.poke(TL_A_Opcode.putFullData)
+      c.io.tl_i.a_valid.poke(true.B)
+      c.io.tl_i.d_ready.poke(true.B)
+      c.io.tl_i.a_param.poke(0.U)
+      c.io.tl_i.a_size.poke(2.U)
+      c.io.tl_i.a_source.poke(0.U)
+      c.io.tl_i.a_address.poke(GpioAddressMap.GPIO_INTR_TEST_OFFSET)
+      c.io.tl_i.a_mask.poke("b1111".U)
+      c.io.tl_i.a_data.poke("h00000003".U)
+      c.clock.step(1)
+      c.io.tl_o.d_opcode.expect(TL_D_Opcode.accessAck)
+
+      // giving another clock cycle so that device is now ready to accept new request
+      // as outstanding will get 0 now
+      c.clock.step(1)
+      // reading the interrupt state register
+      c.io.tl_i.a_opcode.poke(TL_A_Opcode.get)
+      c.io.tl_i.a_valid.poke(true.B)
+      c.io.tl_i.d_ready.poke(true.B)
+      c.io.tl_i.a_param.poke(0.U)
+      c.io.tl_i.a_size.poke(2.U)
+      c.io.tl_i.a_source.poke(0.U)
+      c.io.tl_i.a_address.poke(GpioAddressMap.GPIO_INTR_STATE_OFFSET)
+      c.io.tl_i.a_mask.poke("b1111".U)
+      c.clock.step(1)
+      c.io.tl_o.d_opcode.expect(TL_D_Opcode.accessAckData)
+      c.io.tl_o.d_data.expect("h00000003".U)
+      c.io.intr_gpio_o.expect("h00000003".U)
+
+    }
+  }
 }

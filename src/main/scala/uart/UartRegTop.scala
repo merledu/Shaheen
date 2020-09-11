@@ -1,5 +1,6 @@
 package uart
 import chisel3._
+import chisel3.util.{Cat, Fill}
 import registers.{SubReg, SubRegExt}
 import tilelink.{TLConfiguration, TL_D2H, TL_H2D, TL_RegAdapter}
 
@@ -493,4 +494,191 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   ovrd_txval_reg.io.de := false.B
   io.reg2hw.ovrd.txval.q := ovrd_txval_reg.io.q
   ovrd_txval_qs := ovrd_txval_reg.io.qs
+
+  val addr_hit = Wire(Vec(10, Bool()))
+  addr_hit.foreach(w => w := false.B)
+  addr_hit(0) := reg_addr === UartAddressMap.UART_INTR_STATE_OFFSET
+  addr_hit(1) := reg_addr === UartAddressMap.UART_INTR_ENABLE_OFFSET
+  addr_hit(2) := reg_addr === UartAddressMap.UART_INTR_TEST_OFFSET
+  addr_hit(3) := reg_addr === UartAddressMap.UART_CTRL_OFFSET
+  addr_hit(4) := reg_addr === UartAddressMap.UART_STATUS_OFFSET
+  addr_hit(5) := reg_addr === UartAddressMap.UART_RDATA_OFFSET
+  addr_hit(6) := reg_addr === UartAddressMap.UART_WDATA_OFFSET
+  addr_hit(7) := reg_addr === UartAddressMap.UART_FIFO_CTRL_OFFSET
+  addr_hit(8) := reg_addr === UartAddressMap.UART_FIFO_STATUS_OFFSET
+  addr_hit(9) := reg_addr === UartAddressMap.UART_OVRD_OFFSET
+
+  addrmiss := Mux(reg_re || reg_we, ~addr_hit.contains(true.B), false.B)
+
+  wr_err := false.B
+  val UART_PERMIT = Wire(Vec(10, UInt(DBW.W)))
+  UART_PERMIT(0) := "b0001".U   // INTR_STATE register needs 1 byte data only.
+  UART_PERMIT(1) := "b0001".U   // INTR_ENABLE register needs 1 byte data only.
+  UART_PERMIT(2) := "b0001".U   // INTR_TEST register needs 1 byte data only.
+  UART_PERMIT(3) := "b1111".U   // CTRL register needs full word data.
+  UART_PERMIT(4) := "b0001".U   // STATUS register needs 1 byte data only.
+  UART_PERMIT(5) := "b0001".U   // RDATA register needs 1 byte data only.
+  UART_PERMIT(6) := "b0001".U   // WDATA register needs 1 byte data only.
+  UART_PERMIT(7) := "b0001".U   // FIFO_CTRL register needs 1 byte data only.
+  UART_PERMIT(8) := "b0111".U   // FIFO_STATUS register needs 3 byte data only.
+  UART_PERMIT(9) := "b0001".U   // OVRD register needs 1 byte data only.
+
+  for (i <- 0 until 10) {
+    wr_err := Mux(addr_hit(i) && reg_we && (UART_PERMIT(i) =/= (UART_PERMIT(i) & reg_be)), true.B, false.B)
+  }
+
+
+  /** Initialising software signals */
+  intr_state_tx_empty_we := addr_hit(0) & reg_we & ~wr_err
+  intr_state_tx_empty_wd := reg_wdata(2)
+  intr_state_rx_overflow_we := addr_hit(0) & reg_we & ~wr_err
+  intr_state_rx_overflow_wd := reg_wdata(3)
+  intr_state_rx_frame_err_we := addr_hit(0) & reg_we & ~wr_err
+  intr_state_rx_frame_err_wd := reg_wdata(4)
+  intr_state_rx_break_err_we := addr_hit(0) & reg_we & ~wr_err
+  intr_state_rx_break_err_wd := reg_wdata(5)
+  intr_state_rx_timeout_we := addr_hit(0) & reg_we & ~wr_err
+  intr_state_rx_timeout_wd := reg_wdata(6)
+  intr_state_rx_parity_err_we := addr_hit(0) & reg_we & ~wr_err
+  intr_state_rx_parity_err_wd := reg_wdata(7)
+
+  intr_enable_tx_empty_we := addr_hit(1) & reg_we & ~wr_err
+  intr_enable_tx_empty_wd := reg_wdata(2)
+  intr_enable_rx_overflow_we := addr_hit(1) & reg_we & ~wr_err
+  intr_enable_rx_overflow_wd := reg_wdata(3)
+  intr_enable_rx_frame_err_we := addr_hit(1) & reg_we & ~wr_err
+  intr_enable_rx_frame_err_wd := reg_wdata(4)
+  intr_enable_rx_break_err_we := addr_hit(1) & reg_we & ~wr_err
+  intr_enable_rx_break_err_wd := reg_wdata(5)
+  intr_enable_rx_timeout_we := addr_hit(1) & reg_we & ~wr_err
+  intr_enable_rx_timeout_wd := reg_wdata(6)
+  intr_enable_rx_parity_err_we := addr_hit(1) & reg_we & ~wr_err
+  intr_enable_rx_parity_err_wd := reg_wdata(7)
+
+  intr_test_tx_empty_we := addr_hit(2) & reg_we & ~wr_err
+  intr_test_tx_empty_wd := reg_wdata(2)
+  intr_test_rx_overflow_we := addr_hit(2) & reg_we & ~wr_err
+  intr_test_rx_overflow_wd := reg_wdata(3)
+  intr_test_rx_frame_err_we := addr_hit(2) & reg_we & ~wr_err
+  intr_test_rx_frame_err_wd := reg_wdata(4)
+  intr_test_rx_break_err_we := addr_hit(2) & reg_we & ~wr_err
+  intr_test_rx_break_err_wd := reg_wdata(5)
+  intr_test_rx_timeout_we := addr_hit(2) & reg_we & ~wr_err
+  intr_test_rx_timeout_wd := reg_wdata(6)
+  intr_test_rx_parity_err_we := addr_hit(2) & reg_we & ~wr_err
+  intr_test_rx_parity_err_wd := reg_wdata(7)
+
+  ctrl_tx_we := addr_hit(3) & reg_we & ~wr_err
+  ctrl_tx_wd := reg_wdata(0)
+  ctrl_rx_we := addr_hit(3) & reg_we & ~wr_err
+  ctrl_rx_wd := reg_wdata(1)
+  ctrl_slpbk_we := addr_hit(3) & reg_we & ~wr_err
+  ctrl_slpbk_wd := reg_wdata(4)
+  ctrl_llpbk_we := addr_hit(3) & reg_we & ~wr_err
+  ctrl_llpbk_wd := reg_wdata(5)
+  ctrl_parity_en_we := addr_hit(3) & reg_we & ~wr_err
+  ctrl_parity_en_wd := reg_wdata(6)
+  ctrl_parity_odd_we := addr_hit(3) & reg_we & ~wr_err
+  ctrl_parity_odd_wd := reg_wdata(7)
+  ctrl_rxblvl_we := addr_hit(3) & reg_we & ~wr_err
+  ctrl_rxblvl_wd := reg_wdata(9,8)
+  ctrl_nco_we := addr_hit(3) & reg_we & ~wr_err
+  ctrl_nco_wd := reg_wdata(31,16)
+
+  status_txfull_re := addr_hit(4) && reg_re
+  status_rxfull_re := addr_hit(4) && reg_re
+  status_txidle_re := addr_hit(4) && reg_re
+  status_txempty_re := addr_hit(4) && reg_re
+  status_rxidle_re := addr_hit(4) && reg_re
+  status_rxempty_re := addr_hit(4) && reg_re
+
+  rdata_re := addr_hit(5) && reg_re
+
+  wdata_we := addr_hit(6) & reg_we & ~wr_err
+  wdata_wd := reg_wdata(7,0)
+
+  fifo_ctrl_rxrst_we := addr_hit(7) & reg_we & ~wr_err
+  fifo_ctrl_rxrst_wd := reg_wdata(0)
+  fifo_ctrl_txrst_we := addr_hit(7) & reg_we & ~wr_err
+  fifo_ctrl_txrst_wd := reg_wdata(1)
+
+  fifo_status_txlvl_re := addr_hit(8) && reg_re
+  fifo_status_rxlvl_re := addr_hit(8) && reg_re
+
+  ovrd_txen_we := addr_hit(9) & reg_we & ~wr_err
+  ovrd_txen_wd := reg_wdata(0)
+  ovrd_txval_we := addr_hit(9) & reg_we & ~wr_err
+  ovrd_txval_wd := reg_wdata(1)
+
+  reg_rdata_next := 0.U
+  when(addr_hit(0)) {
+    reg_rdata_next := Cat(
+      0.U(24.W), // 24 bits MSB all 0000s
+      intr_state_rx_parity_err_qs, // 7th bit
+      intr_state_rx_timeout_qs,    // 6th bit
+      intr_state_rx_break_err_qs,  // 5th bit
+      intr_state_rx_frame_err_qs,  // 4th bit
+      intr_state_rx_overflow_qs,   // 3rd bit
+      intr_state_tx_empty_qs,      // 2nd bit
+      0.U(2.W)                     // 1st and 0th bit 00s
+    )
+  } .elsewhen(addr_hit(1)) {
+    reg_rdata_next := Cat(
+      0.U(24.W), // 24 bits MSB all 0000s
+      intr_enable_rx_parity_err_qs, // 7th bit
+      intr_enable_rx_timeout_qs,    // 6th bit
+      intr_enable_rx_break_err_qs,  // 5th bit
+      intr_enable_rx_frame_err_qs,  // 4th bit
+      intr_enable_rx_overflow_qs,   // 3rd bit
+      intr_enable_tx_empty_qs,      // 2nd bit
+      0.U(2.W)                     // 1st and 0th bit 00s
+    )
+  } .elsewhen(addr_hit(2)) {
+    reg_rdata_next := 0.U(DW.W)
+  } .elsewhen(addr_hit(3)) {
+    reg_rdata_next := Cat(
+      ctrl_nco_qs,  // [31:16] 16 bits MSB
+      0.U(6.W),     // [15:10] bits reserved
+      ctrl_rxblvl_qs, // [9:8] rxblvl
+      ctrl_parity_odd_qs, // [7] parity_odd
+      ctrl_parity_en_qs,  // [6] parity_en
+      ctrl_llpbk_qs,      // [5] llpbk
+      ctrl_slpbk_qs,      // [4] slpbk
+      0.U(2.W),           // [3:2] 2 bits reserved
+      ctrl_rx_qs,         // [1] rx
+      ctrl_tx_qs          // [0] tx
+    )
+  } .elsewhen(addr_hit(4)) {
+    reg_rdata_next := Cat(
+      0.U(26.W), // [31:6] bits reserved
+      status_rxempty_qs,
+      status_rxidle_qs,
+      status_txidle_qs,
+      status_txempty_qs,
+      status_rxfull_qs,
+      status_txfull_qs
+    )
+  } .elsewhen(addr_hit(5)) {
+    reg_rdata_next := Cat(0.U(24.W), rdata_qs)
+  } .elsewhen(addr_hit(6)) {
+    reg_rdata_next := 0.U(32.W)
+  } .elsewhen(addr_hit(7)) {
+    reg_rdata_next := 0.U(32.W)
+  } .elsewhen(addr_hit(8)) {
+    reg_rdata_next := Cat(
+      0.U(10.W),
+      fifo_status_rxlvl_qs,
+      0.U(10.W),
+      fifo_status_txlvl_qs
+    )
+  } .elsewhen(addr_hit(9)) {
+    reg_rdata_next := Cat(
+      0.U(30.W),
+      ovrd_txval_qs,
+      ovrd_txen_qs
+    )
+  } .otherwise {
+    reg_rdata_next := Fill(DW, 1.U)
+  }
+
 }

@@ -377,7 +377,7 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   status_txfull_reg.io.re := status_txfull_re
   status_txfull_reg.io.we := false.B
   status_txfull_reg.io.wd := false.B
-  status_txfull_reg.io.d := io.hw2reg.status.txfull
+  status_txfull_reg.io.d := io.hw2reg.status.txfull.d
   io.reg2hw.status.txfull.q := status_txfull_reg.io.q
   io.reg2hw.status.txfull.re := status_txfull_reg.io.qre
   status_txfull_qs := status_txfull_reg.io.qs
@@ -386,7 +386,7 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   status_rxfull_reg.io.re := status_rxfull_re
   status_rxfull_reg.io.we := false.B
   status_rxfull_reg.io.wd := false.B
-  status_rxfull_reg.io.d := io.hw2reg.status.rxfull
+  status_rxfull_reg.io.d := io.hw2reg.status.rxfull.d
   io.reg2hw.status.rxfull.q := status_rxfull_reg.io.q
   io.reg2hw.status.rxfull.re := status_rxfull_reg.io.qre
   status_rxfull_qs := status_rxfull_reg.io.qs
@@ -395,7 +395,7 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   status_txempty_reg.io.re := status_txempty_re
   status_txempty_reg.io.we := false.B
   status_txempty_reg.io.wd := false.B
-  status_txempty_reg.io.d := io.hw2reg.status.txempty
+  status_txempty_reg.io.d := io.hw2reg.status.txempty.d
   io.reg2hw.status.txempty.q := status_txempty_reg.io.q
   io.reg2hw.status.txempty.re := status_txempty_reg.io.qre
   status_txempty_qs := status_txempty_reg.io.qs
@@ -404,7 +404,7 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   status_txidle_reg.io.re := status_txidle_re
   status_txidle_reg.io.we := false.B
   status_txidle_reg.io.wd := false.B
-  status_txidle_reg.io.d := io.hw2reg.status.txidle
+  status_txidle_reg.io.d := io.hw2reg.status.txidle.d
   io.reg2hw.status.txidle.q := status_txidle_reg.io.q
   io.reg2hw.status.txidle.re := status_txidle_reg.io.qre
   status_txidle_qs := status_txidle_reg.io.qs
@@ -413,7 +413,7 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   status_rxidle_reg.io.re := status_rxidle_re
   status_rxidle_reg.io.we := false.B
   status_rxidle_reg.io.wd := false.B
-  status_rxidle_reg.io.d := io.hw2reg.status.rxidle
+  status_rxidle_reg.io.d := io.hw2reg.status.rxidle.d
   io.reg2hw.status.rxidle.q := status_rxidle_reg.io.q
   io.reg2hw.status.rxidle.re := status_rxidle_reg.io.qre
   status_rxidle_qs := status_rxidle_reg.io.qs
@@ -422,7 +422,7 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   status_rxempty_reg.io.re := status_rxempty_re
   status_rxempty_reg.io.we := false.B
   status_rxempty_reg.io.wd := false.B
-  status_rxempty_reg.io.d := io.hw2reg.status.rxempty
+  status_rxempty_reg.io.d := io.hw2reg.status.rxempty.d
   io.reg2hw.status.rxempty.q := status_rxempty_reg.io.q
   io.reg2hw.status.rxempty.re := status_rxempty_reg.io.qre
   status_rxempty_qs := status_rxempty_reg.io.qs
@@ -460,8 +460,8 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   fifo_ctrl_txrst_reg.io.wd := fifo_ctrl_txrst_wd
   fifo_ctrl_txrst_reg.io.d := false.B
   fifo_ctrl_txrst_reg.io.de := false.B
-  io.reg2hw.fifo_ctrl.rxrst.q := fifo_ctrl_txrst_reg.io.q
-  io.reg2hw.fifo_ctrl.rxrst.qe := fifo_ctrl_txrst_reg.io.qe
+  io.reg2hw.fifo_ctrl.txrst.q := fifo_ctrl_txrst_reg.io.q
+  io.reg2hw.fifo_ctrl.txrst.qe := fifo_ctrl_txrst_reg.io.qe
 
   /** Creating registers for each bit field of FIFO_STATUS register */
   val fifo_status_txlvl_reg = Module(new SubRegExt(DW = 6))

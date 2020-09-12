@@ -1,4 +1,4 @@
-package registers
+package primitives
 import chisel3._
 
 /**

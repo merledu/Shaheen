@@ -1,4 +1,4 @@
-package registers
+package primitives
 import org.scalatest._
 import chiseltest._
 import chisel3._

@@ -6,10 +6,10 @@ import tilelink.TLConfiguration
 
 class UartTest extends FlatSpec with ChiselScalatestTester with Matchers {
   //implicit val conf = TLConfiguration()
-  behavior of "uart tx module"
+  behavior of "uart rx module"
 
   it should "just connect without errors" in {
-    test(new UartTx()) {c =>
+    test(new UartRx()) {c =>
       c.clock.step(10)
     }
   }

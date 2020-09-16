@@ -13,10 +13,13 @@ class IntrHardware(width: Int = 1, flopOutput: Boolean = true) extends Module {
     val hw2reg_intr_state_de_o = Output(Bool())
     val hw2reg_intr_state_d_o = Output(UInt(width.W))
 
-    val intr_o = Output(width.W)
+    val intr_o = Output(UInt(width.W))
   })
 
-
+  // generating an event if software writes to INTR_TEST register as well as peripheral logic
+  // is generating an event
+  // Replicating qe from software for all the q bits and ANDing it with q to see which
+  // events are triggered through software.
   val new_event = Wire(UInt(width.W))
   new_event := Fill(width, io.reg2hw_intr_test_qe_i) & io.reg2hw_intr_test_q_i | io.event_intr_i
   io.hw2reg_intr_state_de_o := new_event.orR()

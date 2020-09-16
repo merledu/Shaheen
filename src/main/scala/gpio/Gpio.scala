@@ -1,6 +1,7 @@
 package gpio
 import chisel3._
 import chisel3.util.{Cat, Fill}
+import primitives.IntrHardware
 import tilelink.{TLConfiguration, TL_D2H, TL_H2D}
 
 class Gpio(implicit val conf: TLConfiguration) extends Module {
@@ -107,13 +108,14 @@ class Gpio(implicit val conf: TLConfiguration) extends Module {
 
   event_intr_combined := event_intr_rise | event_intr_fall | event_intr_acthigh | event_intr_actlow
 
-  val new_event = Wire(UInt(32.W))
-  // generating an event if software writes to INTR_TEST register as well as peripheral logic
-  // is generating an event
-  // Replicating qe from software for all the q bits and ANDing it with q to see which
-  // events are triggered through software.
-  new_event := (Fill(32, reg2hw.intr_test.qe) & reg2hw.intr_test.q) | event_intr_combined
-  hw2reg.intr_state.de := new_event.orR() // Setting up intr_state.de to high if any bit of new_event is high
-  hw2reg.intr_state.d := new_event | reg2hw.intr_state.q
-  io.intr_gpio_o := reg2hw.intr_state.q & reg2hw.intr_enable.q
+  val intr_hw = Module(new IntrHardware(width = 32))
+  intr_hw.io.event_intr_i := event_intr_combined
+  intr_hw.io.reg2hw_intr_enable_q_i := reg2hw.intr_enable.q
+  intr_hw.io.reg2hw_intr_test_q_i := reg2hw.intr_test.q
+  intr_hw.io.reg2hw_intr_test_qe_i := reg2hw.intr_test.qe
+  intr_hw.io.reg2hw_intr_state_q_i := reg2hw.intr_state.q
+  hw2reg.intr_state.de := intr_hw.io.hw2reg_intr_state_de_o
+  hw2reg.intr_state.d := intr_hw.io.hw2reg_intr_state_d_o
+  io.intr_gpio_o := intr_hw.io.intr_o
+
 }

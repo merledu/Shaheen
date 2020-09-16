@@ -4,10 +4,13 @@ import chisel3.util.Cat
 
 class UartTx extends Module {
   val io = IO(new Bundle {
+    // coming from CTRL register
     val tx_enable = Input(Bool())
     val tick_baud_x16 = Input(Bool())
+    // coming from CTRL register
     val parity_en = Input(Bool())
 
+    // Indicating data is available from FIFO and ready to write
     val wr = Input(Bool())
     val wr_parity = Input(Bool())
     val wr_data = Input(UInt(8.W))

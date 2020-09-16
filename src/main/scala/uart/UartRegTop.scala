@@ -50,9 +50,6 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   val intr_state_rx_break_err_we = Wire(Bool())
   val intr_state_rx_break_err_wd = Wire(Bool())
   val intr_state_rx_break_err_qs = Wire(Bool())
-  val intr_state_rx_timeout_we = Wire(Bool())
-  val intr_state_rx_timeout_wd = Wire(Bool())
-  val intr_state_rx_timeout_qs = Wire(Bool())
   val intr_state_rx_parity_err_we = Wire(Bool())
   val intr_state_rx_parity_err_wd = Wire(Bool())
   val intr_state_rx_parity_err_qs = Wire(Bool())
@@ -70,9 +67,6 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   val intr_enable_rx_break_err_we = Wire(Bool())
   val intr_enable_rx_break_err_wd = Wire(Bool())
   val intr_enable_rx_break_err_qs = Wire(Bool())
-  val intr_enable_rx_timeout_we = Wire(Bool())
-  val intr_enable_rx_timeout_wd = Wire(Bool())
-  val intr_enable_rx_timeout_qs = Wire(Bool())
   val intr_enable_rx_parity_err_we = Wire(Bool())
   val intr_enable_rx_parity_err_wd = Wire(Bool())
   val intr_enable_rx_parity_err_qs = Wire(Bool())
@@ -86,8 +80,6 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   val intr_test_rx_frame_err_wd = Wire(Bool())
   val intr_test_rx_break_err_we = Wire(Bool())
   val intr_test_rx_break_err_wd = Wire(Bool())
-  val intr_test_rx_timeout_we = Wire(Bool())
-  val intr_test_rx_timeout_wd = Wire(Bool())
   val intr_test_rx_parity_err_we = Wire(Bool())
   val intr_test_rx_parity_err_wd = Wire(Bool())
 
@@ -193,14 +185,6 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   io.reg2hw.intr_state.rx_break_err.q := intr_state_rx_break_err_reg.io.q
   intr_state_rx_break_err_qs := intr_state_rx_break_err_reg.io.qs
 
-  val intr_state_rx_timeout_reg = Module(new SubReg(SWACCESS = "W1C", DW = 1)())
-  intr_state_rx_timeout_reg.io.we := intr_state_rx_timeout_we
-  intr_state_rx_timeout_reg.io.wd := intr_state_rx_timeout_wd
-  intr_state_rx_timeout_reg.io.d := io.hw2reg.intr_state.rx_timeout.d
-  intr_state_rx_timeout_reg.io.de := io.hw2reg.intr_state.rx_timeout.de
-  io.reg2hw.intr_state.rx_timeout.q := intr_state_rx_timeout_reg.io.q
-  intr_state_rx_timeout_qs := intr_state_rx_timeout_reg.io.qs
-
   val intr_state_rx_parity_err_reg = Module(new SubReg(SWACCESS = "W1C", DW = 1)())
   intr_state_rx_parity_err_reg.io.we := intr_state_rx_parity_err_we
   intr_state_rx_parity_err_reg.io.wd := intr_state_rx_parity_err_wd
@@ -242,17 +226,9 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   io.reg2hw.intr_enable.rx_break_err.q := intr_enable_rx_break_err_reg.io.q
   intr_enable_rx_break_err_qs := intr_enable_rx_break_err_reg.io.qs
 
-  val intr_enable_rx_timeout_reg = Module(new SubReg(SWACCESS = "RW", DW = 1)())
-  intr_enable_rx_timeout_reg.io.we := intr_enable_rx_timeout_we
-  intr_enable_rx_timeout_reg.io.wd := intr_enable_rx_timeout_wd
-  intr_enable_rx_timeout_reg.io.d := false.B
-  intr_enable_rx_timeout_reg.io.de := false.B
-  io.reg2hw.intr_enable.rx_timeout.q := intr_enable_rx_timeout_reg.io.q
-  intr_enable_rx_timeout_qs := intr_enable_rx_timeout_reg.io.qs
-
   val intr_enable_rx_parity_err_reg = Module(new SubReg(SWACCESS = "RW", DW = 1)())
-  intr_enable_rx_parity_err_reg.io.we := intr_enable_rx_timeout_we
-  intr_enable_rx_parity_err_reg.io.wd := intr_enable_rx_timeout_wd
+  intr_enable_rx_parity_err_reg.io.we := intr_enable_rx_parity_err_we
+  intr_enable_rx_parity_err_reg.io.wd := intr_enable_rx_parity_err_wd
   intr_enable_rx_parity_err_reg.io.d := false.B
   intr_enable_rx_parity_err_reg.io.de := false.B
   io.reg2hw.intr_enable.rx_parity_err.q := intr_enable_rx_parity_err_reg.io.q
@@ -290,14 +266,6 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   intr_test_rx_break_err_reg.io.d := false.B
   io.reg2hw.intr_test.rx_break_err.q := intr_test_rx_break_err_reg.io.q
   io.reg2hw.intr_test.rx_break_err.qe := intr_test_rx_break_err_reg.io.qe
-
-  val intr_test_rx_timeout_reg = Module(new SubRegExt(DW = 1))
-  intr_test_rx_timeout_reg.io.re := false.B
-  intr_test_rx_timeout_reg.io.we := intr_test_rx_timeout_we
-  intr_test_rx_timeout_reg.io.wd := intr_test_rx_timeout_wd
-  intr_test_rx_timeout_reg.io.d := false.B
-  io.reg2hw.intr_test.rx_timeout.q := intr_test_rx_timeout_reg.io.q
-  io.reg2hw.intr_test.rx_timeout.qe := intr_test_rx_timeout_reg.io.qe
 
   val intr_test_rx_parity_err_reg = Module(new SubRegExt(DW = 1))
   intr_test_rx_parity_err_reg.io.re := false.B
@@ -537,8 +505,6 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   intr_state_rx_frame_err_wd := reg_wdata(4)
   intr_state_rx_break_err_we := addr_hit(0) & reg_we & ~wr_err
   intr_state_rx_break_err_wd := reg_wdata(5)
-  intr_state_rx_timeout_we := addr_hit(0) & reg_we & ~wr_err
-  intr_state_rx_timeout_wd := reg_wdata(6)
   intr_state_rx_parity_err_we := addr_hit(0) & reg_we & ~wr_err
   intr_state_rx_parity_err_wd := reg_wdata(7)
 
@@ -550,8 +516,6 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   intr_enable_rx_frame_err_wd := reg_wdata(4)
   intr_enable_rx_break_err_we := addr_hit(1) & reg_we & ~wr_err
   intr_enable_rx_break_err_wd := reg_wdata(5)
-  intr_enable_rx_timeout_we := addr_hit(1) & reg_we & ~wr_err
-  intr_enable_rx_timeout_wd := reg_wdata(6)
   intr_enable_rx_parity_err_we := addr_hit(1) & reg_we & ~wr_err
   intr_enable_rx_parity_err_wd := reg_wdata(7)
 
@@ -563,8 +527,6 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
   intr_test_rx_frame_err_wd := reg_wdata(4)
   intr_test_rx_break_err_we := addr_hit(2) & reg_we & ~wr_err
   intr_test_rx_break_err_wd := reg_wdata(5)
-  intr_test_rx_timeout_we := addr_hit(2) & reg_we & ~wr_err
-  intr_test_rx_timeout_wd := reg_wdata(6)
   intr_test_rx_parity_err_we := addr_hit(2) & reg_we & ~wr_err
   intr_test_rx_parity_err_wd := reg_wdata(7)
 
@@ -615,7 +577,7 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
     reg_rdata_next := Cat(
       0.U(24.W), // 24 bits MSB all 0000s
       intr_state_rx_parity_err_qs, // 7th bit
-      intr_state_rx_timeout_qs,    // 6th bit
+      0.U(1.W),                    // 6th bit
       intr_state_rx_break_err_qs,  // 5th bit
       intr_state_rx_frame_err_qs,  // 4th bit
       intr_state_rx_overflow_qs,   // 3rd bit
@@ -626,7 +588,7 @@ class UartRegTop(implicit val conf: TLConfiguration) extends Module {
     reg_rdata_next := Cat(
       0.U(24.W), // 24 bits MSB all 0000s
       intr_enable_rx_parity_err_qs, // 7th bit
-      intr_enable_rx_timeout_qs,    // 6th bit
+      0.U(1.W),                     // 6th bit
       intr_enable_rx_break_err_qs,  // 5th bit
       intr_enable_rx_frame_err_qs,  // 4th bit
       intr_enable_rx_overflow_qs,   // 3rd bit

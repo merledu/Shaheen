@@ -15,9 +15,6 @@ class UartReg2HW extends Bundle {
     val rx_break_err = new Bundle {
       val q = Output(Bool())
     }
-    val rx_timeout = new Bundle {
-      val q = Output(Bool())
-    }
     val rx_parity_err = new Bundle {
       val q = Output(Bool())
     }
@@ -34,9 +31,6 @@ class UartReg2HW extends Bundle {
       val q = Output(Bool())
     }
     val rx_break_err = new Bundle {
-      val q = Output(Bool())
-    }
-    val rx_timeout = new Bundle {
       val q = Output(Bool())
     }
     val rx_parity_err = new Bundle {
@@ -58,10 +52,6 @@ class UartReg2HW extends Bundle {
       val qe = Output(Bool())
     }
     val rx_break_err = new Bundle {
-      val q = Output(Bool())
-      val qe = Output(Bool())
-    }
-    val rx_timeout = new Bundle {
       val q = Output(Bool())
       val qe = Output(Bool())
     }
@@ -171,10 +161,6 @@ class UartHw2Reg extends Bundle {
       val de = Input(Bool())
     }
     val rx_break_err = new Bundle {
-      val d = Input(Bool())
-      val de = Input(Bool())
-    }
-    val rx_timeout = new Bundle {
       val d = Input(Bool())
       val de = Input(Bool())
     }

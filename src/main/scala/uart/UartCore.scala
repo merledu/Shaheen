@@ -1,7 +1,7 @@
 package uart
 import chisel3._
 import chisel3.util.{Cat, Enum}
-import primitives.{Fifo, FlopSynchronizer}
+import primitives.{Fifo, FlopSynchronizer, IntrHardware}
 
 class UartCore extends Module {
   val io = IO(new Bundle {
@@ -15,7 +15,6 @@ class UartCore extends Module {
     val intr_rx_overflow_o = Output(Bool())
     val intr_rx_frame_err_o = Output(Bool())
     val intr_rx_break_err_o = Output(Bool())
-    val intr_rx_timeout_o = Output(Bool())
     val intr_rx_parity_err_o = Output(Bool())
   })
 
@@ -57,8 +56,8 @@ class UartCore extends Module {
   val tx_out = Wire(UInt(1.W))
   val rx_sync = Wire(UInt(1.W))
 
-  val break_st_q = RegInit(breakChk)
   val breakChk :: breakWait :: Nil = Enum(2)
+  val break_st_q = RegInit(breakChk)
   val break_err = Wire(Bool())
   val rx_in = Wire(Bool())
   val uart_rdata = Wire(UInt(8.W))
@@ -144,7 +143,7 @@ class UartCore extends Module {
   uart_tx.io.wr := tx_fifo_rready
   uart_tx.io.wr_parity := (tx_fifo_data.xorR()) ^ io.reg2hw.ctrl.parity_odd.q
   uart_tx.io.wr_data := tx_fifo_data
-  uart_tx.io.idle := tx_uart_idle
+  tx_uart_idle := uart_tx.io.idle
   tx_out := uart_tx.io.tx
 
   io.tx := Mux(line_loopback, io.rx, tx_out_q)
@@ -211,6 +210,54 @@ class UartCore extends Module {
 
   event_rx_break_err := break_err & (break_st_q === breakChk)
 
+  val intr_hw_tx_empty = Module(new IntrHardware(width = 1))
+  intr_hw_tx_empty.io.event_intr_i := event_tx_empty
+  intr_hw_tx_empty.io.reg2hw_intr_enable_q_i := io.reg2hw.intr_enable.tx_empty.q
+  intr_hw_tx_empty.io.reg2hw_intr_test_q_i := io.reg2hw.intr_test.tx_empty.q
+  intr_hw_tx_empty.io.reg2hw_intr_test_qe_i := io.reg2hw.intr_test.tx_empty.qe
+  intr_hw_tx_empty.io.reg2hw_intr_state_q_i := io.reg2hw.intr_state.tx_empty.q
+  io.hw2reg.intr_state.tx_empty.de := intr_hw_tx_empty.io.hw2reg_intr_state_de_o
+  io.hw2reg.intr_state.tx_empty.d := intr_hw_tx_empty.io.hw2reg_intr_state_d_o
+  io.intr_tx_empty_o := intr_hw_tx_empty.io.intr_o
 
+  val intr_hw_rx_overflow = Module(new IntrHardware(width = 1))
+  intr_hw_rx_overflow.io.event_intr_i := event_rx_overflow
+  intr_hw_rx_overflow.io.reg2hw_intr_enable_q_i := io.reg2hw.intr_enable.rx_overflow.q
+  intr_hw_rx_overflow.io.reg2hw_intr_test_q_i := io.reg2hw.intr_test.rx_overflow.q
+  intr_hw_rx_overflow.io.reg2hw_intr_test_qe_i := io.reg2hw.intr_test.rx_overflow.qe
+  intr_hw_rx_overflow.io.reg2hw_intr_state_q_i := io.reg2hw.intr_state.rx_overflow.q
+  io.hw2reg.intr_state.rx_overflow.de := intr_hw_rx_overflow.io.hw2reg_intr_state_de_o
+  io.hw2reg.intr_state.rx_overflow.d := intr_hw_rx_overflow.io.hw2reg_intr_state_d_o
+  io.intr_rx_overflow_o := intr_hw_rx_overflow.io.intr_o
+
+  val intr_hw_rx_frame_err = Module(new IntrHardware(width = 1))
+  intr_hw_rx_frame_err.io.event_intr_i := event_rx_frame_err
+  intr_hw_rx_frame_err.io.reg2hw_intr_enable_q_i := io.reg2hw.intr_enable.rx_frame_err.q
+  intr_hw_rx_frame_err.io.reg2hw_intr_test_q_i := io.reg2hw.intr_test.rx_frame_err.q
+  intr_hw_rx_frame_err.io.reg2hw_intr_test_qe_i := io.reg2hw.intr_test.rx_frame_err.qe
+  intr_hw_rx_frame_err.io.reg2hw_intr_state_q_i := io.reg2hw.intr_state.rx_frame_err.q
+  io.hw2reg.intr_state.rx_frame_err.de := intr_hw_rx_frame_err.io.hw2reg_intr_state_de_o
+  io.hw2reg.intr_state.rx_frame_err.d := intr_hw_rx_frame_err.io.hw2reg_intr_state_d_o
+  io.intr_rx_frame_err_o := intr_hw_rx_frame_err.io.intr_o
+
+  val intr_hw_rx_break_err = Module(new IntrHardware(width = 1))
+  intr_hw_rx_break_err.io.event_intr_i := event_rx_break_err
+  intr_hw_rx_break_err.io.reg2hw_intr_enable_q_i := io.reg2hw.intr_enable.rx_break_err.q
+  intr_hw_rx_break_err.io.reg2hw_intr_test_q_i := io.reg2hw.intr_test.rx_break_err.q
+  intr_hw_rx_break_err.io.reg2hw_intr_test_qe_i := io.reg2hw.intr_test.rx_break_err.qe
+  intr_hw_rx_break_err.io.reg2hw_intr_state_q_i := io.reg2hw.intr_state.rx_break_err.q
+  io.hw2reg.intr_state.rx_break_err.de := intr_hw_rx_break_err.io.hw2reg_intr_state_de_o
+  io.hw2reg.intr_state.rx_break_err.d := intr_hw_rx_break_err.io.hw2reg_intr_state_d_o
+  io.intr_rx_break_err_o := intr_hw_rx_break_err.io.intr_o
+
+  val intr_hw_rx_parity_err = Module(new IntrHardware(width = 1))
+  intr_hw_rx_parity_err.io.event_intr_i := event_rx_parity_err
+  intr_hw_rx_parity_err.io.reg2hw_intr_enable_q_i := io.reg2hw.intr_enable.rx_parity_err.q
+  intr_hw_rx_parity_err.io.reg2hw_intr_test_q_i := io.reg2hw.intr_test.rx_parity_err.q
+  intr_hw_rx_parity_err.io.reg2hw_intr_test_qe_i := io.reg2hw.intr_test.rx_parity_err.qe
+  intr_hw_rx_parity_err.io.reg2hw_intr_state_q_i := io.reg2hw.intr_state.rx_parity_err.q
+  io.hw2reg.intr_state.rx_parity_err.de := intr_hw_rx_parity_err.io.hw2reg_intr_state_de_o
+  io.hw2reg.intr_state.rx_parity_err.d := intr_hw_rx_parity_err.io.hw2reg_intr_state_d_o
+  io.intr_rx_parity_err_o := intr_hw_rx_parity_err.io.intr_o
 
 }

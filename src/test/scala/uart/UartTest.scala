@@ -19,5 +19,10 @@ class UartTest extends FlatSpec with ChiselScalatestTester with Matchers {
       c.clock.step(10)
     }
   }
+  it should "just connect UART core top without errors" in {
+    test(new UartCore()) {c =>
+      c.clock.step(10)
+    }
+  }
 
 }

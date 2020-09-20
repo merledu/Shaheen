@@ -1,6 +1,6 @@
 package uart
 import chisel3._
-import tilelink.{TLConfiguration, TL_D2H, TL_H2D}
+import merl.uit.tilelink.{TLConfiguration, TL_D2H, TL_H2D}
 
 class Uart(implicit val conf: TLConfiguration) extends Module {
   val io = IO(new Bundle {

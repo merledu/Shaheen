@@ -2,7 +2,7 @@ package uart
 import org.scalatest._
 import chisel3._
 import chiseltest._
-import tilelink.TLConfiguration
+import merl.uit.tilelink.TLConfiguration
 
 class UartTest extends FlatSpec with ChiselScalatestTester with Matchers {
   implicit val conf = TLConfiguration()

@@ -1,8 +1,8 @@
 package gpio
 import chisel3._
 import chisel3.util.{Cat, Fill}
+import merl.uit.tilelink.{TLConfiguration, TL_D2H, TL_H2D, TL_RegAdapter}
 import primitives.{SubReg, SubRegExt}
-import tilelink.{TLConfiguration, TL_D2H, TL_H2D, TL_RegAdapter}
 
 class GpioRegTop(implicit val conf: TLConfiguration) extends Module {
   val io = IO(new Bundle {

@@ -1,8 +1,8 @@
 package gpio
 import chisel3._
 import chisel3.util.{Cat, Fill}
+import merl.uit.tilelink.{TLConfiguration, TL_D2H, TL_H2D}
 import primitives.IntrHardware
-import tilelink.{TLConfiguration, TL_D2H, TL_H2D}
 
 class Gpio(implicit val conf: TLConfiguration) extends Module {
   val io = IO(new Bundle {

@@ -2,7 +2,7 @@ package gpio
 import org.scalatest._
 import chiseltest._
 import chisel3._
-import tilelink.{TLConfiguration, TL_A_Opcode, TL_D_Opcode}
+import merl.uit.tilelink.{TLConfiguration, TL_A_Opcode, TL_D_Opcode}
 
 class GpioTest extends FlatSpec with ChiselScalatestTester with Matchers {
   implicit val conf = TLConfiguration()

@@ -1,3 +1,6 @@
 [submodule "TileLink"]
 	path = TileLink
 	url = https://github.com/merledu/TileLink.git
+[submodule "Buraq-mini"]
+	path = Buraq-mini
+	url = https://github.com/merledu/Buraq-mini.git

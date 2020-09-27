@@ -42,6 +42,7 @@ resolvers ++= Seq(
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 // Adding the submodule's src path so that it's classes can be used
 unmanagedSourceDirectories in Compile += baseDirectory.value / "TileLink" / "src"
+unmanagedSourceDirectories in Compile += baseDirectory.value / "Buraq-mini/RV32i" / "src"
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 val defaultVersions = Seq(

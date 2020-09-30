@@ -13,7 +13,7 @@ class InstMem extends Module {
   val mem = SyncReadMem(16383, UInt(32.W))
  // val addr = Wire(UInt(32.W))
   
-  loadMemoryFromFile(mem,"/home/hadirkhan/Desktop/mem.txt")
+  loadMemoryFromFile(mem,"/Users/mbp/Desktop/instructions.txt")
 
   io.instr_rdata_o := mem.read(io.instr_addr_i)
   

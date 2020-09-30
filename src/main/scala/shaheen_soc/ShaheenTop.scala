@@ -2,7 +2,7 @@ package shaheen_soc
 import chisel3._
 import _root_.core.Core
 import merl.uit.tilelink.{TLConfiguration, TL_H2D, TL_HostAdapter, TL_RegAdapter}
-import primitives.InstMem
+import primitives.{DataMem, InstMem}
 
 class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val io = IO(new Bundle {
@@ -10,9 +10,14 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   })
   val core = Module(new Core())
   val iccm = Module(new InstMem())
+  val dccm = Module(new DataMem())
   val core_iccm_tl_host = Module(new TL_HostAdapter())
+  val core_dccm_tl_host = Module(new TL_HostAdapter())
   val iccm_tl_device = Module(new TL_RegAdapter(14, 32, forSRAM = true.B)())
+  val dccm_tl_device = Module(new TL_RegAdapter(regAw = 14, regDw = 32, forSRAM = true.B)())
 
+  /** |||||||||||| CORE -> TL_HOST ADAPTER -> TL_DEVICE ADAPTER -> ICCM |||||||||||| */
+  /** |||||||||||| ICCM -> TL_DEVICE ADAPTER -> TL_HOST ADAPTER -> CORE |||||||||||| */
   core_iccm_tl_host.io.req_i := core.io.instr_req_o
   core_iccm_tl_host.io.addr_i := core.io.instr_addr_o
   core_iccm_tl_host.io.we_i := false.B
@@ -31,9 +36,28 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   core.io.instr_gnt_i := core_iccm_tl_host.io.gnt_o
   core.io.instr_rvalid_i := core_iccm_tl_host.io.valid_o
 
-  core.io.data_gnt_i := false.B
-  core.io.data_rvalid_i := false.B
-  core.io.data_rdata_i := 0.S
+  /** |||||||||||| CORE -> TL_HOST ADAPTER -> TL_DEVICE ADAPTER -> DCCM |||||||||||| */
+  /** |||||||||||| DCCM -> TL_DEVICE ADAPTER -> TL_HOST ADAPTER -> CORE |||||||||||| */
+  core_dccm_tl_host.io.req_i := core.io.data_req_o
+  core_dccm_tl_host.io.addr_i := core.io.data_addr_o.asUInt()
+  core_dccm_tl_host.io.we_i := core.io.data_we_o
+  core_dccm_tl_host.io.wdata_i := core.io.data_wdata_o.asUInt()
+  core_dccm_tl_host.io.be_i := core.io.data_be_o
+
+  dccm_tl_device.io.tl_i <> core_dccm_tl_host.io.tl_o
+  core_dccm_tl_host.io.tl_i <> dccm_tl_device.io.tl_o
+  dccm_tl_device.io.error_i := false.B
+  dccm_tl_device.io.rdata_i := dccm.io.rdata_o
+
+  dccm.io.addr_i := dccm_tl_device.io.addr_o >> 2
+  dccm.io.wdata_i := dccm_tl_device.io.wdata_o
+  dccm.io.we_i := dccm_tl_device.io.we_o
+  dccm.io.re_i := dccm_tl_device.io.re_o
+  dccm.io.mask_i := dccm_tl_device.io.be_o
+
+  core.io.data_gnt_i := core_dccm_tl_host.io.gnt_o
+  core.io.data_rvalid_i := core_dccm_tl_host.io.valid_o
+  core.io.data_rdata_i := core_dccm_tl_host.io.rdata_o.asSInt()
 
   // dummy interface
   io.dummy := core.io.reg_out

@@ -11,7 +11,7 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val core = Module(new Core())
   val iccm = Module(new InstMem())
   val core_iccm_tl_host = Module(new TL_HostAdapter())
-  val iccm_tl_device = Module(new TL_RegAdapter(14, 32)())
+  val iccm_tl_device = Module(new TL_RegAdapter(14, 32, forSRAM = true.B)())
 
   core_iccm_tl_host.io.req_i := core.io.instr_req_o
   core_iccm_tl_host.io.addr_i := core.io.instr_addr_o
@@ -23,7 +23,7 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   core_iccm_tl_host.io.tl_i <> iccm_tl_device.io.tl_o
 
   iccm.io.instr_req_i := iccm_tl_device.io.re_o
-  iccm.io.instr_addr_i := iccm_tl_device.io.addr_o
+  iccm.io.instr_addr_i := iccm_tl_device.io.addr_o >> 2
   iccm_tl_device.io.rdata_i := iccm.io.instr_rdata_o
   iccm_tl_device.io.error_i := false.B  // may get error from 1:N socket with address mishandling
 

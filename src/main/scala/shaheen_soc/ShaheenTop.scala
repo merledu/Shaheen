@@ -52,7 +52,6 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   dccm.io.addr_i := dccm_tl_device.io.addr_o >> 2
   dccm.io.wdata_i := dccm_tl_device.io.wdata_o
   dccm.io.we_i := dccm_tl_device.io.we_o
-  dccm.io.re_i := dccm_tl_device.io.re_o
   dccm.io.mask_i := dccm_tl_device.io.be_o
 
   core.io.data_gnt_i := core_dccm_tl_host.io.gnt_o

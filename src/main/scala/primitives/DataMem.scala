@@ -4,7 +4,7 @@ import chisel3._
 class DataMem extends Module {
   val io = IO(new Bundle {
     val we_i = Input(Bool())
-    val re_i = Input(Bool())
+//    val re_i = Input(Bool())
     val addr_i = Input(UInt(14.W))
     val wdata_i = Input(UInt(32.W))
     val mask_i = Input(UInt(4.W))
@@ -15,10 +15,8 @@ class DataMem extends Module {
   when(io.we_i) {
     mem.write(io.addr_i, io.wdata_i)
     io.rdata_o := DontCare
-  }.elsewhen(io.re_i) {
+  } .otherwise {
     io.rdata_o := mem.read(io.addr_i)
-  }.otherwise {
-    io.rdata_o := DontCare
   }
 
 }

@@ -11,7 +11,7 @@ class DataMem extends Module {
     val rdata_o = Output(UInt(32.W))
   })
 
-  val mem = SyncReadMem(16383, UInt(32.W))
+  val mem = SyncReadMem(16384, UInt(32.W))
   when(io.we_i) {
     mem.write(io.addr_i, io.wdata_i)
     io.rdata_o := DontCare

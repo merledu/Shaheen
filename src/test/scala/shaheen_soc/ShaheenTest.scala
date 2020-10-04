@@ -6,7 +6,7 @@ import chiseltest._
 import merl.uit.tilelink.TLConfiguration
 
 class ShaheenTest(c: ShaheenTop) extends PeekPokeTester(c) {
-  step(20)
+  step(40)
 }
 
 object ShaheenTestDriver extends App {

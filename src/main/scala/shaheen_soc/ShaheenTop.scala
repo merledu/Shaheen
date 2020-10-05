@@ -6,7 +6,7 @@ import primitives.{DataMem, InstMem}
 
 class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val io = IO(new Bundle {
-    val dummy = Output(SInt(32.W))  // just a dummy output
+    val result = Output(SInt(32.W))  // just a dummy output
   })
   val core = Module(new Core())
   val iccm = Module(new InstMem())
@@ -56,5 +56,5 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   core.io.data_rdata_i := core_dccm_tl_host.io.rdata_o.asSInt()
 
   // dummy interface
-  io.dummy := core.io.reg_out
+  io.result := core.io.reg_7
 }

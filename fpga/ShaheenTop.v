@@ -1906,10 +1906,12 @@ module StructuralDetector(
   output       io_fwd_rs1,
   output       io_fwd_rs2
 );
-  wire  _T_1 = io_MEM_WB_REGRD == io_rs1_sel; // @[StructuralDetector.scala 17:52]
-  wire  _T_4 = io_MEM_WB_REGRD == io_rs2_sel; // @[StructuralDetector.scala 23:51]
-  assign io_fwd_rs1 = io_MEM_WB_regWr & _T_1; // @[StructuralDetector.scala 18:16 StructuralDetector.scala 20:16]
-  assign io_fwd_rs2 = io_MEM_WB_regWr & _T_4; // @[StructuralDetector.scala 24:16 StructuralDetector.scala 26:16]
+  wire  _T_1 = io_MEM_WB_REGRD != 5'h0; // @[StructuralDetector.scala 17:51]
+  wire  _T_2 = io_MEM_WB_regWr & _T_1; // @[StructuralDetector.scala 17:32]
+  wire  _T_3 = io_MEM_WB_REGRD == io_rs1_sel; // @[StructuralDetector.scala 17:86]
+  wire  _T_8 = io_MEM_WB_REGRD == io_rs2_sel; // @[StructuralDetector.scala 23:86]
+  assign io_fwd_rs1 = _T_2 & _T_3; // @[StructuralDetector.scala 18:16 StructuralDetector.scala 20:16]
+  assign io_fwd_rs2 = _T_2 & _T_8; // @[StructuralDetector.scala 24:16 StructuralDetector.scala 26:16]
 endmodule
 module Jalr(
   input  [31:0] io_input_a,

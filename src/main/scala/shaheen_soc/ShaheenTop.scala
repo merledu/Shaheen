@@ -47,13 +47,14 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   core_dccm_tl_host.io.tl_i <> dccm_tl_device.io.tl_o
   dccm_tl_device.io.rdata_i := Cat(dccm.io.rdata_o(3),dccm.io.rdata_o(2),dccm.io.rdata_o(1),dccm.io.rdata_o(0))
 
+  dccm.io.csb_i := false.B    // always enabling the memory (active low)
   dccm.io.addr_i := dccm_tl_device.io.addr_o >> 2
 
   dccm.io.wdata_i(0) := dccm_tl_device.io.wdata_o(7,0)
   dccm.io.wdata_i(1) := dccm_tl_device.io.wdata_o(15,8)
   dccm.io.wdata_i(2) := dccm_tl_device.io.wdata_o(23,16)
   dccm.io.wdata_i(3) := dccm_tl_device.io.wdata_o(31,24)
-  dccm.io.we_i := dccm_tl_device.io.we_o
+  dccm.io.we_i := ~dccm_tl_device.io.we_o   // inverting write enable because we_i is active low.
   dccm.io.wmask_i := dccm_tl_device.io.wmask_o
 
   core.io.data_gnt_i := core_dccm_tl_host.io.gnt_o

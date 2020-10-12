@@ -3,7 +3,8 @@ import chisel3._
 
 class DataMem extends Module {
   val io = IO(new Bundle {
-    val we_i = Input(Bool())
+    val csb_i = Input(Bool())   // active low chip select
+    val we_i = Input(Bool())    // active low write enable
     val addr_i = Input(UInt(14.W))
     val wdata_i = Input(Vec(4, UInt(8.W)))
     val wmask_i = Input(Vec(4, Bool()))
@@ -11,11 +12,13 @@ class DataMem extends Module {
   })
 
   val mem = SyncReadMem(16384, Vec(4, UInt(8.W)))
-  when(io.we_i) {
+  when(!io.csb_i && !io.we_i) {
     mem.write(io.addr_i, io.wdata_i, io.wmask_i)
     io.rdata_o := DontCare
-  } .otherwise {
+  } .elsewhen(!io.csb_i && io.we_i) {
     io.rdata_o := mem.read(io.addr_i)
+  } .otherwise {
+    io.rdata_o := DontCare
   }
 
 }

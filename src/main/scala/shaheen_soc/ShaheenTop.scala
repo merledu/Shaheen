@@ -11,7 +11,8 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
     val rx_i = Input(UInt(1.W))
     val result = Output(SInt(32.W))  // output for testing on fpga
   })
-  val uart_ctrl = Module(new UartController(100000000, 115200))
+  val uart_ctrl = Module(new UartController(10000, 3000))
+  //val uart_ctrl = Module(new UartController(8000000, 115200))
   val core = Module(new Core())
   val iccm = Module(new InstMem())
   val dccm = Module(new DataMem())

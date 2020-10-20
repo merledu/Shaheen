@@ -9,10 +9,9 @@ import uart0.UartController
 class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val io = IO(new Bundle {
     val rx_i = Input(UInt(1.W))
-    val result = Output(SInt(32.W))  // output for testing on fpga
+    val result = Output(SInt(4.W))  // output for testing on fpga
   })
-  val uart_ctrl = Module(new UartController(10000, 3000))
-  //val uart_ctrl = Module(new UartController(8000000, 115200))
+  val uart_ctrl = Module(new UartController(8000000, 9600))
   val core = Module(new Core())
   val iccm = Module(new InstMem())
   val dccm = Module(new DataMem())
@@ -29,24 +28,39 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
 
   val rx_data_reg = RegInit(0.U(32.W))
   val rx_addr_reg = RegInit(0.U(32.W))
+  val reset_reg = RegInit(true.B)
+
   uart_ctrl.io.rxd := io.rx_i
   val idle :: read_uart :: write_iccm :: prog_finish :: Nil = Enum(4)
   val state_reg = RegInit(idle)
-
+  reset_reg := reset.asBool()
   // After reset checking also if uart_ctrl.done is false then only goto start_uart
   // uart_ctrl.done indicates that the program is fully received from the host
   // and it remains high for the complete lifecycle of the SoC.
   // Using it in the condition avoid the core to stall after every reset press.
   // the stall will only take place if the soc was never programmed.
-  state_reg := Mux(reset.asBool() === false.B && !uart_ctrl.io.done, read_uart, idle)
+  //state_reg := Mux(reset.asBool() === false.B && !uart_ctrl.io.done, read_uart, idle)
 
   when(state_reg === idle) {
+    when(reset_reg === true.B && reset.asBool() === false.B) {
+      state_reg := read_uart
+    } .otherwise {
+      state_reg := idle
+    }
     instr_we := true.B  // active low
     instr_addr := iccm_tl_device.io.addr_o >> 2
     instr_wdata := DontCare
     core.io.stall_core_i := false.B
     uart_ctrl.io.isStalled := false.B
   } .elsewhen(state_reg === read_uart) {
+      when(uart_ctrl.io.valid) {
+      state_reg := write_iccm
+    } .elsewhen(uart_ctrl.io.done) {
+        // changed here now check on on fpga after synthesizing
+      state_reg := prog_finish
+    } .otherwise {
+      state_reg := read_uart
+    }
     instr_we := true.B  // active low
     instr_addr := DontCare
     instr_wdata := DontCare
@@ -57,13 +71,18 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
     // otherwise checking if uart_ctrl.done is high indicating the program has ended
     // this time uart_ctrl.valid will not be high since we don't want to write that data in memory.
     // if both of them are not true we remain in the current state.
-    state_reg := Mux(uart_ctrl.io.valid, write_iccm, Mux(uart_ctrl.io.done, prog_finish, read_uart))
+    //state_reg := Mux(uart_ctrl.io.valid, write_iccm, Mux(uart_ctrl.io.done, prog_finish, read_uart))
     // store data and addr in registers if uart_ctrl.valid is high to save it since going to next state i.e write_iccm
     // will take one more cycle which may make the received data and addr invalid since by then another data and addr
     // could be written inside it.
     rx_data_reg := Mux(uart_ctrl.io.valid, uart_ctrl.io.rx_data_o, 0.U)
     rx_addr_reg := Mux(uart_ctrl.io.valid, uart_ctrl.io.addr_o, 0.U)
   } .elsewhen(state_reg === write_iccm) {
+    when(uart_ctrl.io.done) {
+      state_reg := prog_finish
+    } .otherwise {
+      state_reg := read_uart
+    }
     instr_we := false.B   // active low
     instr_wdata := rx_data_reg
     instr_addr := rx_addr_reg
@@ -75,7 +94,7 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
     //iccm.io.we_i := false.B   // active low
     //iccm.io.wdata_i := rx_data_reg
     //iccm.io.addr_i := rx_addr_reg
-    state_reg := Mux(uart_ctrl.io.done, prog_finish, read_uart)
+    //state_reg := Mux(uart_ctrl.io.done, prog_finish, read_uart)
   } .elsewhen(state_reg === prog_finish) {
     instr_we := true.B   // active low
     instr_wdata := DontCare
@@ -142,5 +161,5 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   core.io.data_rdata_i := core_dccm_tl_host.io.rdata_o.asSInt()
 
   // dummy interface
-  io.result := core.io.reg_7
+  io.result := core.io.reg_7(3,0).asSInt()
 }

@@ -1,4 +1,5 @@
 package shaheen_soc
+import Chisel.Fill
 import chisel3._
 import chisel3.util.{Cat, Enum, log2Ceil}
 import _root_.core.Core
@@ -10,9 +11,10 @@ import uart0.UartController
 class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val io = IO(new Bundle {
     val rx_i = Input(UInt(1.W))
-    val gpio_o = Output(UInt(32.W))  // output for testing on fpga
+    val gpio_i = Input(UInt(4.W))
+    val gpio_o = Output(UInt(16.W))  // output for testing on fpga
   })
-//  val uart_ctrl = Module(new UartController(8000000, 9600))
+  //val uart_ctrl = Module(new UartController(8000000, 9600))
   val uart_ctrl = Module(new UartController(10000, 3000))
   val core = Module(new Core())
   val iccm = Module(new InstMem())
@@ -189,9 +191,9 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   dccm.io.wmask_i := dccm_tl_device.io.wmask_o
 
   /** ||||||||||||||||| INITIALIZING THE GPIO ||||||||||||||||| */
-  gpio.io.cio_gpio_i := 0.U   // right now grounding the input GPIO pins.
+  gpio.io.cio_gpio_i := Cat(Fill(28, 0.U),io.gpio_i)
   val gpio_val = gpio.io.cio_gpio_o & gpio.io.cio_gpio_en_o
-  io.gpio_o := gpio_val
+  io.gpio_o := gpio_val(15,0)
 
 
   core.io.data_gnt_i := core_loadStore_tl_host.io.gnt_o

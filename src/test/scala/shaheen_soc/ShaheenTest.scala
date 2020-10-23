@@ -4,6 +4,9 @@ import chisel3.iotesters._
 import merl.uit.tilelink.TLConfiguration
 
 class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
+  /** Initializing GPIO input pins */
+
+  poke(c.io.gpio_i, 0xffffffff)
   val bufferedSource =  Source.fromFile(filePath)
   val fileData = bufferedSource.getLines.toArray
   // We create an array insts by reading the lines from the text file and parsing the string
@@ -53,7 +56,7 @@ class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
     poke(c.io.rx_i, 1)
     step(2)
   }
-  step(900)
+  step(9000)
 }
 
 object ShaheenTestDriver extends App {

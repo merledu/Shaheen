@@ -8,7 +8,7 @@ object AddressMap {
   val ADDR_MASK_UART  = "h00000fff".U(32.W)
   val ADDR_SPACE_GPIO = "h40010000".U(32.W)
   val ADDR_MASK_GPIO  = "h00000fff".U(32.W)
-  val ADDR_SPACE_DCCM = "h18000000".U(32.W)
+  val ADDR_SPACE_DCCM = "h10000000".U(32.W)
   val ADDR_MASK_DCCM  = "h00003fff".U(32.W)
 }
 

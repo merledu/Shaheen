@@ -1,11 +1,13 @@
 package shaheen_soc
 import scala.io.Source
+import chisel3._
+import chisel3.iotesters.Driver.execute
 import chisel3.iotesters._
 import merl.uit.tilelink.TLConfiguration
 
 class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
   /** Initializing GPIO input pins */
-
+  poke(c.io.irq_external_i, false.B)
   poke(c.io.gpio_i, 0xffffffff)
   val bufferedSource =  Source.fromFile(filePath)
   val fileData = bufferedSource.getLines.toArray
@@ -56,11 +58,15 @@ class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
     poke(c.io.rx_i, 1)
     step(2)
   }
+  step(4)
+  poke(c.io.irq_external_i, true.B)
+  step(1)
+  poke(c.io.irq_external_i, false.B)
   step(900)
 }
 
 object ShaheenTestDriver extends App {
   implicit val conf = TLConfiguration()
 //  Driver(() => new ShaheenTop) {c => new ShaheenTest(c)}
-  Driver.execute(Array("--generate-vcd-output", "on"), () => new ShaheenTop()) {c => new ShaheenTest(c, "/home/merl/Desktop/mem.txt")}
+  execute(Array("--generate-vcd-output", "on"), () => new ShaheenTop()) {c => new ShaheenTest(c, "/home/merl/Desktop/mem.txt")}
 }

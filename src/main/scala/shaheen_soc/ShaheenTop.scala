@@ -10,6 +10,7 @@ import uart0.UartController
 
 class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val io = IO(new Bundle {
+    val irq_external_i = Input(Bool())  // just for testing, in future will be provided by the gpio
     val rx_i = Input(UInt(1.W))
     val gpio_i = Input(UInt(4.W))
     val gpio_o = Output(UInt(16.W))  // output for testing on fpga
@@ -196,6 +197,7 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   io.gpio_o := gpio_val(15,0)
 
 
+  core.io.irq_external_i := io.irq_external_i
   core.io.data_gnt_i := core_loadStore_tl_host.io.gnt_o
   core.io.data_rvalid_i := core_loadStore_tl_host.io.valid_o
   core.io.data_rdata_i := core_loadStore_tl_host.io.rdata_o.asSInt()

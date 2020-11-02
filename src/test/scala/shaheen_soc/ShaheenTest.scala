@@ -62,11 +62,15 @@ class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
   poke(c.io.irq_external_i, true.B)
   step(1)
   poke(c.io.irq_external_i, false.B)
+  step(4)
+  poke(c.io.irq_external_i, true.B)
+  step(1)
+  poke(c.io.irq_external_i, false.B)
   step(900)
 }
 
 object ShaheenTestDriver extends App {
   implicit val conf = TLConfiguration()
 //  Driver(() => new ShaheenTop) {c => new ShaheenTest(c)}
-  execute(Array("--generate-vcd-output", "on"), () => new ShaheenTop()) {c => new ShaheenTest(c, "/home/merl/Desktop/mem.txt")}
+  execute(Array("--generate-vcd-output", "on"), () => new ShaheenTop()) {c => new ShaheenTest(c, "/Users/mbp/Desktop/instructions.txt")}
 }

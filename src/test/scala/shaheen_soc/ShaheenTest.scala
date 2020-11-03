@@ -7,14 +7,14 @@ import merl.uit.tilelink.TLConfiguration
 
 class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
   /** Initializing GPIO input pins */
-  poke(c.io.irq_external_i, false.B)
   poke(c.io.gpio_i, 0xffffffff)
   val bufferedSource =  Source.fromFile(filePath)
   val fileData = bufferedSource.getLines.toArray
   // We create an array insts by reading the lines from the text file and parsing the string
   // as hexadecimal. The parse function does not accept 0x literals so we used substring(2)
   // to get rid of the first two characters which are 0x finally "yielding" it into an array.
-  val insts = for (i <- fileData) yield java.lang.Long.parseLong(i, 16)
+//  val insts = for (i <- fileData) yield java.lang.Long.parseLong(i, 16)
+  val insts = for (i <- fileData) yield java.lang.Long.parseLong(i.substring(2), 16)
   // closing the opened file
   bufferedSource.close
 
@@ -58,19 +58,11 @@ class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
     poke(c.io.rx_i, 1)
     step(2)
   }
-  step(4)
-  poke(c.io.irq_external_i, true.B)
-  step(1)
-  poke(c.io.irq_external_i, false.B)
-  step(4)
-  poke(c.io.irq_external_i, true.B)
-  step(1)
-  poke(c.io.irq_external_i, false.B)
   step(900)
 }
 
 object ShaheenTestDriver extends App {
   implicit val conf = TLConfiguration()
 //  Driver(() => new ShaheenTop) {c => new ShaheenTest(c)}
-  execute(Array("--generate-vcd-output", "on"), () => new ShaheenTop()) {c => new ShaheenTest(c, "/Users/mbp/Desktop/instructions.txt")}
+  execute(Array("--generate-vcd-output", "on"), () => new ShaheenTop()) {c => new ShaheenTest(c, "/home/merl/Desktop/mem.txt")}
 }

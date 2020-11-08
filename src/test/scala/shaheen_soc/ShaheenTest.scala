@@ -58,7 +58,7 @@ class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
     poke(c.io.rx_i, 1)
     step(2)
   }
-  step(900)
+  step(300)
 }
 
 object ShaheenTestDriver extends App {

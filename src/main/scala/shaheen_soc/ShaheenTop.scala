@@ -72,8 +72,8 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val gpio                          =       Module(new Gpio())
   val core_iccm_tl_host             =       Module(new TL_HostAdapter())
   val core_loadStore_tl_host        =       Module(new TL_HostAdapter())
-  val iccm_tl_device                =       Module(new TL_SramAdapter(sramAw = 14, sramDw = 32, forFetch = true.B))
-  val dccm_tl_device                =       Module(new TL_SramAdapter(sramAw = 14, sramDw = 32))
+  val iccm_tl_device                =       Module(new TL_SramAdapter(sramAw = 8, sramDw = 32, forFetch = true.B))  // for 1 KB memory
+  val dccm_tl_device                =       Module(new TL_SramAdapter(sramAw = 8, sramDw = 32)) // for 1 KB memory
   val tl_switch_1to2                =       Module(new TLSocket1_N(2))
 
   /** ||||||||||||||||||||||||||||||| INITIAL BOOT UP AFTER RESET ||||||||||||||||||||||||||||||| */

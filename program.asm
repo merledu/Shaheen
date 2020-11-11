@@ -66,9 +66,13 @@ nop
 nop
 # program memory
 li x2, 0x00001880
-csrrw x3, 0x300, x2
+li x15, 0x10000000
+sw x2, 0(x15)
+lw x3, 0(x15)
+csrrw x4, 0x300, x3
+csrrw x5, 0x300, x4
+csrrw x6, 0x300, x0
 nop
 nop
 nop
-nop
-csrrw x4, 0x300, x0
+

@@ -9,12 +9,12 @@ class InstMem extends Module {
 //    val instr_rdata_o = Output(UInt(32.W))
     val csb_i = Input(Bool())   // active low chip select
     val we_i = Input(Bool())    // active low write enable
-    val addr_i = Input(UInt(14.W))
+    val addr_i = Input(UInt(8.W))
     val wdata_i = Input(UInt(32.W))
     val rdata_o = Output(UInt(32.W))
   })
 
-  val mem = SyncReadMem(16384, UInt(32.W))
+  val mem = SyncReadMem(256, UInt(32.W))
   
 //  loadMemoryFromFile(mem,"/home/merl/Desktop/mem.txt")
 //

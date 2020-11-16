@@ -7,7 +7,7 @@ import merl.uit.tilelink.TLConfiguration
 
 class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
   /** Initializing GPIO input pins */
-  poke(c.io.gpio_i, 0xffffffff)
+ // poke(c.io.gpio_i, 0xffffffff)
   val bufferedSource =  Source.fromFile(filePath)
   val fileData = bufferedSource.getLines.toArray
   // We create an array insts by reading the lines from the text file and parsing the string
@@ -64,5 +64,5 @@ class ShaheenTest(c: ShaheenTop, filePath: String) extends PeekPokeTester(c) {
 object ShaheenTestDriver extends App {
   implicit val conf = TLConfiguration()
 //  Driver(() => new ShaheenTop) {c => new ShaheenTest(c)}
-  execute(Array("--generate-vcd-output", "on"), () => new ShaheenTop()) {c => new ShaheenTest(c, "/Users/mbp/Desktop/instructions.txt")}
+  execute(Array("--generate-vcd-output", "on"), () => new ShaheenTop()) {c => new ShaheenTest(c, "/home/merl/Desktop/mem.txt")}
 }

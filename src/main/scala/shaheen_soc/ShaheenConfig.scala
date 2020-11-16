@@ -9,7 +9,8 @@ object AddressMap {
   val ADDR_SPACE_GPIO = "h40010000".U(32.W)
   val ADDR_MASK_GPIO  = "h00000fff".U(32.W)
   val ADDR_SPACE_DCCM = "h10000000".U(32.W)
-  val ADDR_MASK_DCCM  = "h00003fff".U(32.W)
+  //val ADDR_MASK_DCCM  = "h00003fff".U(32.W) // mask for 64 KB ram
+  val ADDR_MASK_DCCM  = "h000000ff".U(32.W)   // mask for 1KB ram
 }
 
 object TL_Peripherals {

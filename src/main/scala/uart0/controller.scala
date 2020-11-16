@@ -22,6 +22,7 @@ class UartController extends Module {
   val regValid = RegInit(false.B)
 
   val rx = Module(new RX)
+  
   rx.io.rxd := io.rxd
 
   val dataReg = RegInit(0.U(8.W))

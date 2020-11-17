@@ -1,6 +1,7 @@
 package primitives
 import chisel3._
 
+/** TODO: Have to make changes here to support DFFRAM memory interfaces */
 class DataMem extends Module {
   val io = IO(new Bundle {
     val csb_i = Input(Bool())   // active low chip select

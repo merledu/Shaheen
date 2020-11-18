@@ -64,8 +64,8 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
 
 
 
-  //val uart_ctrl = Module(new UartController(8000000, 9600))
-  val uart_ctrl                     =       Module(new UartController(10000, 3000))
+  val uart_ctrl = Module(new UartController(8000000, 9600))
+  //val uart_ctrl                     =       Module(new UartController(10000, 3000))
   val core                          =       Module(new Core())
   val iccm                          =       Module(new InstMem())
   val dccm                          =       Module(new DataMem())
@@ -77,7 +77,7 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val tl_switch_1to2                =       Module(new TLSocket1_N(2))
 
   /** ||||||||||||||||||||||||||||||| INITIAL BOOT UP AFTER RESET ||||||||||||||||||||||||||||||| */
-  val instr_we                      =       Wire(Bool())
+  val instr_we                      =       Wire(Vec(4,Bool()))
   val instr_wdata                   =       Wire(UInt(32.W))
   val instr_addr                    =       Wire(UInt(32.W))
 
@@ -104,8 +104,10 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
 
     }
 
-    instr_we                       :=       true.B  // active low
-    instr_addr                     :=       iccm_tl_device.io.addr_o >> 2
+    // setting all we_i to be false, since nothing to be written
+    instr_we.foreach(w => w := false.B)
+    //instr_we                       :=       false.B  // active high
+    instr_addr                     :=       iccm_tl_device.io.addr_o
     instr_wdata                    :=       DontCare
     core.io.stall_core_i           :=       false.B
     uart_ctrl.io.isStalled         :=       false.B
@@ -129,7 +131,9 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
         state_reg                  :=       read_uart
     }
 
-    instr_we                       :=       true.B  // active low
+    // setting all we_i to be false, since nothing to be written
+    instr_we.foreach(w => w := false.B)
+    //instr_we                       :=       true.B  // active low
     instr_addr                     :=       DontCare
     instr_wdata                    :=       DontCare
     core.io.stall_core_i           :=       true.B
@@ -140,7 +144,7 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
     // could be written inside it.
 
     rx_data_reg                    :=       Mux(uart_ctrl.io.valid, uart_ctrl.io.rx_data_o, 0.U)
-    rx_addr_reg                    :=       Mux(uart_ctrl.io.valid, uart_ctrl.io.addr_o, 0.U)
+    rx_addr_reg                    :=       Mux(uart_ctrl.io.valid, uart_ctrl.io.addr_o << 2.U, 0.U)    // left shifting address by 2 since uart ctrl sends address in 0,1,2... format but we need it in word aligned so 1 translated to 4, 2 translates to 8 (dffram requirement)
 
   } .elsewhen(state_reg === write_iccm) {
     // when writing to the iccm state checking if the uart received the ending instruction. If it does then
@@ -157,7 +161,9 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
 
     }
 
-    instr_we                       :=       false.B   // active low
+    // setting all we_i to be true, since instruction (32 bit) needs to be written
+    instr_we.foreach(w => w := true.B)
+    //instr_we                       :=       false.B   // active low
     instr_wdata                    :=       rx_data_reg
     instr_addr                     :=       rx_addr_reg
     // keep stalling the core
@@ -166,16 +172,20 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
 
   } .elsewhen(state_reg === prog_finish) {
 
-    instr_we                       :=       true.B   // active low
+    // setting all we_i to be false, since nothing to be written
+    instr_we.foreach(w => w := false.B)
+    //instr_we                       :=       true.B   // active low
     instr_wdata                    :=       DontCare
-    instr_addr                     :=       iccm_tl_device.io.addr_o >> 2
+    instr_addr                     :=       iccm_tl_device.io.addr_o
     core.io.stall_core_i           :=       false.B
     uart_ctrl.io.isStalled         :=       false.B
     state_reg                      :=       idle
 
   } .otherwise {
 
-    instr_we                       :=       true.B   // active low
+    // setting all we_i to be false, since nothing to be written
+    instr_we.foreach(w => w := false.B)
+    //instr_we                       :=       true.B   // active low
     instr_wdata                    :=       DontCare
     instr_addr                     :=       DontCare
     core.io.stall_core_i           :=       DontCare
@@ -253,7 +263,7 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   iccm_tl_device.io.tl_i           <>       core_iccm_tl_host.io.tl_o
   core_iccm_tl_host.io.tl_i        <>       iccm_tl_device.io.tl_o
 
-  iccm.io.csb_i                    :=       false.B  // active low
+  iccm.io.en_i                     :=       true.B  // active high
   iccm.io.we_i                     :=       instr_we
   iccm.io.addr_i                   :=       instr_addr
   iccm.io.wdata_i                  :=       instr_wdata

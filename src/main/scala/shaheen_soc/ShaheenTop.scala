@@ -274,15 +274,15 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
 
   dccm_tl_device.io.rdata_i        :=       Cat(dccm.io.rdata_o(3),dccm.io.rdata_o(2),dccm.io.rdata_o(1),dccm.io.rdata_o(0))
 
-  dccm.io.csb_i                    :=       false.B    // always enabling the memory (active low)
-  dccm.io.addr_i                   :=       dccm_tl_device.io.addr_o >> 2
+  dccm.io.en_i                     :=       true.B    // always enabling the memory (active high)
+  dccm.io.addr_i                   :=       dccm_tl_device.io.addr_o
 
   dccm.io.wdata_i(0)               :=       dccm_tl_device.io.wdata_o(7,0)
   dccm.io.wdata_i(1)               :=       dccm_tl_device.io.wdata_o(15,8)
   dccm.io.wdata_i(2)               :=       dccm_tl_device.io.wdata_o(23,16)
   dccm.io.wdata_i(3)               :=       dccm_tl_device.io.wdata_o(31,24)
-  dccm.io.we_i                     :=       ~dccm_tl_device.io.we_o   // inverting write enable because we_i is active low.
-  dccm.io.wmask_i                  :=       dccm_tl_device.io.wmask_o
+  dccm.io.we_i                     :=       dccm_tl_device.io.we_o   // inverting write enable because we_i is active low.
+ // dccm.io.wmask_i                  :=       dccm_tl_device.io.wmask_o
 
   /** ||||||||||||||||| INITIALIZING THE GPIO ||||||||||||||||| */
   //gpio.io.cio_gpio_i               :=       Cat(Fill(28, 0.U),io.gpio_i)

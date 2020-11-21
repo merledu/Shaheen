@@ -64,8 +64,8 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
 
 
 
-  val uart_ctrl = Module(new UartController(8000000, 9600))
-  //val uart_ctrl                     =       Module(new UartController(10000, 3000))
+  //val uart_ctrl = Module(new UartController(8000000, 9600))
+  val uart_ctrl                     =       Module(new UartController(10000, 3000))
   val core                          =       Module(new Core())
   val iccm                          =       Module(new InstMem())
   val dccm                          =       Module(new DataMem())
@@ -144,7 +144,7 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
     // could be written inside it.
 
     rx_data_reg                    :=       Mux(uart_ctrl.io.valid, uart_ctrl.io.rx_data_o, 0.U)
-    rx_addr_reg                    :=       Mux(uart_ctrl.io.valid, uart_ctrl.io.addr_o << 2.U, 0.U)    // left shifting address by 2 since uart ctrl sends address in 0,1,2... format but we need it in word aligned so 1 translated to 4, 2 translates to 8 (dffram requirement)
+    rx_addr_reg                    :=       Mux(uart_ctrl.io.valid, uart_ctrl.io.addr_o << 2, 0.U)    // left shifting address by 2 since uart ctrl sends address in 0,1,2... format but we need it in word aligned so 1 translated to 4, 2 translates to 8 (dffram requirement)
 
   } .elsewhen(state_reg === write_iccm) {
     // when writing to the iccm state checking if the uart received the ending instruction. If it does then

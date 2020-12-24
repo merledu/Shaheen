@@ -9075,7 +9075,7 @@ endmodule
 // endmodule
 module sram_1rw1r_32_256_8_sky130(
 // Port 0: RW
-    clk0,csb0,web0,wmask0,addr0,din0,dout0,
+    clk0,csb0,web0,wmask0,addr0,din0,dout0
   );
 
   parameter NUM_WMASKS = 4 ;

@@ -1,18 +1,29 @@
 package shaheen_soc
-import Chisel.Fill
 import chisel3._
 import chisel3.util.{Cat, Enum, log2Ceil}
 import _root_.core.Core
 import gpio.Gpio
-import merl.uit.tilelink.{TLConfiguration, TLSocket1_N, TL_H2D, TL_HostAdapter, TL_RegAdapter, TL_SramAdapter}
-import primitives.{DataMem, InstMem}
+import merl.uit.tilelink.{TLConfiguration, TLSocket1_N, TL_HostAdapter, TL_SramAdapter}
 import uart0.UartController
 
 class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val io = IO(new Bundle {
     val rx_i      =     Input(UInt(1.W))
-    //val gpio_i    =     Input(UInt(4.W))
-    val gpio_o    =     Output(UInt(16.W))  // output for testing on fpga
+    val CLK_PER_BIT = Input(UInt(16.W))
+    val gpio_i    =     Input(UInt(32.W))
+    val gpio_o    =     Output(UInt(32.W))
+    val gpio_en_o =     Output(UInt(32.W))
+    // instruction memory interface
+    val iccm_we_o   =     Output(Bool())
+    val iccm_wdata_o =    Output(UInt(32.W))
+    val iccm_addr_o =     Output(UInt(8.W))
+    val iccm_rdata_i  =   Input(UInt(32.W))
+    // data memory interface
+    val dccm_we_o = Output(Bool())
+    val dccm_wdata_o = Output(Vec(4, UInt(8.W)))
+    val dccm_wmask_o = Output(Vec(4, Bool()))
+    val dccm_addr_o = Output(UInt(8.W))
+    val dccm_rdata_i = Input(Vec(4, UInt(8.W)))
   })
 
 
@@ -65,10 +76,8 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
 
 
   //val uart_ctrl = Module(new UartController(8000000, 9600))
-  val uart_ctrl                     =       Module(new UartController(10000, 3000))
+  val uart_ctrl                     =       Module(new UartController)
   val core                          =       Module(new Core())
-  val iccm                          =       Module(new InstMem())
-  val dccm                          =       Module(new DataMem())
   val gpio                          =       Module(new Gpio())
   val core_iccm_tl_host             =       Module(new TL_HostAdapter())
   val core_loadStore_tl_host        =       Module(new TL_HostAdapter())
@@ -87,6 +96,7 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   val reset_reg                     =       RegInit(true.B)
 
   uart_ctrl.io.rxd                 :=       io.rx_i
+  uart_ctrl.io.CLK_PER_BIT         :=       io.CLK_PER_BIT
   val idle    ::    read_uart   ::    write_iccm    ::    prog_finish    ::   Nil = Enum(4)
   val state_reg                     =       RegInit(idle)
   reset_reg                        :=       reset.asBool()
@@ -253,11 +263,10 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   iccm_tl_device.io.tl_i           <>       core_iccm_tl_host.io.tl_o
   core_iccm_tl_host.io.tl_i        <>       iccm_tl_device.io.tl_o
 
-  iccm.io.csb_i                    :=       false.B  // active low
-  iccm.io.we_i                     :=       instr_we
-  iccm.io.addr_i                   :=       instr_addr
-  iccm.io.wdata_i                  :=       instr_wdata
-  iccm_tl_device.io.rdata_i        :=       iccm.io.rdata_o
+  io.iccm_we_o                     :=       instr_we
+  io.iccm_addr_o                   :=       instr_addr
+  io.iccm_wdata_o                  :=       instr_wdata
+  iccm_tl_device.io.rdata_i        :=       io.iccm_rdata_i
 
   core.io.instr_rdata_i            :=       core_iccm_tl_host.io.rdata_o
   core.io.instr_gnt_i              :=       core_iccm_tl_host.io.gnt_o
@@ -272,23 +281,21 @@ class ShaheenTop(implicit val conf: TLConfiguration) extends Module {
   core_loadStore_tl_host.io.wdata_i:=       core.io.data_wdata_o.asUInt()
   core_loadStore_tl_host.io.be_i   :=       Cat(core.io.data_be_o(3),core.io.data_be_o(2),core.io.data_be_o(1),core.io.data_be_o(0))
 
-  dccm_tl_device.io.rdata_i        :=       Cat(dccm.io.rdata_o(3),dccm.io.rdata_o(2),dccm.io.rdata_o(1),dccm.io.rdata_o(0))
+  dccm_tl_device.io.rdata_i        :=       Cat(io.dccm_rdata_i(3),io.dccm_rdata_i(2),io.dccm_rdata_i(1),io.dccm_rdata_i(0))
 
-  dccm.io.csb_i                    :=       false.B    // always enabling the memory (active low)
-  dccm.io.addr_i                   :=       dccm_tl_device.io.addr_o >> 2
-
-  dccm.io.wdata_i(0)               :=       dccm_tl_device.io.wdata_o(7,0)
-  dccm.io.wdata_i(1)               :=       dccm_tl_device.io.wdata_o(15,8)
-  dccm.io.wdata_i(2)               :=       dccm_tl_device.io.wdata_o(23,16)
-  dccm.io.wdata_i(3)               :=       dccm_tl_device.io.wdata_o(31,24)
-  dccm.io.we_i                     :=       ~dccm_tl_device.io.we_o   // inverting write enable because we_i is active low.
-  dccm.io.wmask_i                  :=       dccm_tl_device.io.wmask_o
+  io.dccm_addr_o                   :=       dccm_tl_device.io.addr_o >> 2
+  io.dccm_wdata_o(0)               :=       dccm_tl_device.io.wdata_o(7,0)
+  io.dccm_wdata_o(1)               :=       dccm_tl_device.io.wdata_o(15,8)
+  io.dccm_wdata_o(2)               :=       dccm_tl_device.io.wdata_o(23,16)
+  io.dccm_wdata_o(3)               :=       dccm_tl_device.io.wdata_o(31,24)
+  io.dccm_we_o                     :=       ~dccm_tl_device.io.we_o   // inverting write enable because we_i is active low.
+  io.dccm_wmask_o                  :=       dccm_tl_device.io.wmask_o
 
   /** ||||||||||||||||| INITIALIZING THE GPIO ||||||||||||||||| */
   //gpio.io.cio_gpio_i               :=       Cat(Fill(28, 0.U),io.gpio_i)
-  gpio.io.cio_gpio_i               :=       0.U   // write now just wiring it with 0
-  val gpio_val                      =       gpio.io.cio_gpio_o & gpio.io.cio_gpio_en_o
-  io.gpio_o                        :=       gpio_val(15,0)
+  gpio.io.cio_gpio_i               :=       io.gpio_i
+  io.gpio_o                        :=       gpio.io.cio_gpio_o
+  io.gpio_en_o                     :=       ~gpio.io.cio_gpio_en_o // inverting since caravel takes en as active low
 
 
   core.io.irq_external_i           :=       gpio.io.intr_gpio_o.orR()

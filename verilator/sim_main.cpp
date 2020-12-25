@@ -1,23 +1,27 @@
 #include "verilated.h"
 #include <iostream>
+#include <iomanip>
 #include "VShaheen_top_openram_cv.h"
-//#include "VShaheenTop.h"
 #include <fstream>
 #include <algorithm>
 #include <verilated_vcd_c.h>
+#include <math.h>
 
-#define NUM_CYCLES ((vluint64_t)5 * 80000)
+#define NUM_CYCLES ((vluint64_t)10 * 90000000)
 
 using namespace std;
 
-//VShaheenTop*top;
-VShaheen_top_openram_cv*top;
-vluint16_t main_time = 0;
+VShaheen_top_openram_cv *top;
+
+vluint64_t hcycle;
+
+double sc_time_stamp(){
+	return hcycle;
+}
 
 int main(int argc, char **argv, char **env)
 {
     top = new VShaheen_top_openram_cv();
-    //top = new VShaheenTop();
     Verilated::commandArgs(argc, argv);
 
     // Tracing
@@ -28,7 +32,7 @@ int main(int argc, char **argv, char **env)
     tfp->open("obj_dir/sim.vcd");
 
     top->reset = 1;
-    //top->io_gpio_i = 0;
+    top->io_gpio_i = 0;
 
     cout << "Starting simulation" << endl;
 
@@ -47,7 +51,16 @@ int main(int argc, char **argv, char **env)
     int n = 0;
     int counter = 0;
     int bit = 0;
-    vluint64_t hcycle;
+    //vluint64_t hcycle;
+
+    // Set frequency and baudrate
+    long int frequency = 80000;
+    long int baudrate = 3000;
+
+    vluint64_t clk_bit = (frequency / baudrate) + 1;
+
+    //Pass clk_bit to top module
+    top->io_CLK_PER_BIT = clk_bit;
 
     // converting instructions to byte
     while (getline(file, ins))
@@ -74,7 +87,7 @@ int main(int argc, char **argv, char **env)
     }
 
     // simulation loop
-    for (hcycle = 0; hcycle < hcycle < (NUM_CYCLES * 2);)
+    for (hcycle = 0; hcycle < (NUM_CYCLES * 2);)
     {
         // toggle clock
         top->clock = top->clock ? 0 : 1;
@@ -84,9 +97,9 @@ int main(int argc, char **argv, char **env)
             top->reset = 0;
             top->io_rx_i = 1;
         }
-        else if (hcycle >= 1667 && hcycle % 1667 == 0)
+        // multiplying by 2 because verilator increments half cycle per loop
+        else if (hcycle >= (clk_bit * 2) && (hcycle % (clk_bit * 2)) == 0)
         {
-      //      top->io_gpio_i = 1;
             if (bit == 0)
             {
                 top->io_rx_i = 0; //start bit
@@ -113,7 +126,6 @@ int main(int argc, char **argv, char **env)
 
         if (tfp)
             tfp->dump(hcycle);
-        main_time++;
     }
     top->final();
     tfp->close();
